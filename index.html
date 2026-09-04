@@ -1,13 +1,762 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biju Super Mart</title>
+    <!-- PDF Generation Library for Thermal Receipt -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- FIREBASE SDK (V8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        /* Modern UI Variables */
+        :root {
+            --primary-color: #2e7d32;
+            --secondary-color: #fbc02d;
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --card-bg: #fff;
+            --danger: #d32f2f;
+            --success: #388e3c;
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; }
+        
+        .app-container { width: 100%; max-width: 1200px; background: var(--card-bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 15px rgba(0,0,0,0.1); padding-bottom: 70px; margin: 0 auto; }
+        
+        .hidden { display: none !important; }
+        .btn { background: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 8px; font-weight: bold; }
+        .btn-secondary { background: var(--secondary-color); color: #333; }
+        .btn-danger { background: var(--danger); }
+        .btn-small { width: auto; padding: 5px 10px; font-size: 14px; }
+        .input-field { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        
+        /* Header & Logo */
+        .header { background: var(--primary-color); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;}
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .shop-logo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: white; padding: 2px; }
+        .brand-info h2 { font-size: 1.3rem; margin-bottom: 2px; }
+        .brand-info p { font-size: 0.8rem; opacity: 0.9; }
+        
+        /* Search & Categories */
+        .search-bar { padding: 15px; }
+        .categories { display: flex; gap: 10px; padding: 0 15px; overflow-x: auto; scrollbar-width: none; }
+        .cat-badge { background: #eee; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
+        .cat-badge.active { background: var(--secondary-color); font-weight: bold; }
+
+        /* Responsive Product Grid */
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
+        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px; } }
+
+        .product-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .product-card:hover { transform: scale(1.02); }
+        .product-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+        .product-card h3 { font-size: 0.95rem; margin: 8px 0 4px; height: 38px; overflow: hidden; }
+        .product-card p { font-weight: bold; color: var(--primary-color); margin-bottom: 8px; }
+        
+        /* Sections & Bottom Nav */
+        .section { padding: 20px; }
+        .admin-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .admin-nav button { flex: 1; min-width: 100px; }
+        .order-card { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fafafa; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1200px; background: white; display: flex; justify-content: space-around; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; border-top-left-radius: 15px; border-top-right-radius: 15px;}
+        .nav-item { text-align: center; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; padding: 5px 15px;}
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        .cart-badge { position: absolute; top: 0; right: 5px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; }
+
+        /* Report Table */
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .report-table th { background-color: var(--primary-color); color: white; }
+
+        /* Wait Screen */
+        .wait-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="section">
+        <div style="text-align: center; margin-bottom: 30px; margin-top: 50px;">
+            <img id="login-logo" src="https://via.placeholder.com/100" class="shop-logo" style="width:100px; height:100px; margin-bottom:10px;">
+            <h1 id="login-shop-name" style="color: var(--primary-color);">Biju Super Mart</h1>
+            <p>Login to start shopping</p>
+        </div>
+        <div style="max-width: 400px; margin: 0 auto;">
+            <input type="text" id="cust-name" class="input-field" placeholder="Enter Your Name">
+            <input type="tel" id="cust-phone" class="input-field" placeholder="Enter Mobile Number (10 digits)">
+            <button class="btn" onclick="registerUser()">Login / Register</button>
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="showAdminLogin()" style="background:transparent; border:none; color:#666; text-decoration:underline; cursor:pointer;">Admin Access</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="admin-login-screen" class="hidden section" style="max-width: 400px; margin: 50px auto;">
+        <h2>Admin Portal</h2>
+        <input type="password" id="admin-pass" class="input-field" placeholder="Enter Admin Password">
+        <button class="btn" onclick="loginAdmin()">Login</button>
+        <button class="btn btn-secondary" onclick="showScreen('login-screen')">Back</button>
+    </div>
+
+    <!-- Customer Home Screen -->
+    <div id="customer-home" class="hidden">
+        <div class="header">
+            <div class="header-left">
+                <img id="display-logo" class="shop-logo" src="https://via.placeholder.com/50">
+                <div class="brand-info">
+                    <h2 id="display-shop-name">Biju Super Mart</h2>
+                    <p id="display-address">📍 Mangalapur | 🕒 7 AM - 10 PM</p>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:transparent; color:white; border:none; font-size: 20px; cursor:pointer;">🚪</button>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" id="search-input" class="input-field" placeholder="🔍 Search for groceries..." onkeyup="filterProducts()" style="margin:0;">
+        </div>
+
+        <div class="categories" id="category-list">
+            <div class="cat-badge active" onclick="setCategory('All')">All</div>
+            <div class="cat-badge" onclick="setCategory('Staples')">Staples</div>
+            <div class="cat-badge" onclick="setCategory('Snacks')">Snacks</div>
+            <div class="cat-badge" onclick="setCategory('Drinks')">Drinks</div>
+        </div>
+
+        <div class="product-grid" id="product-list"></div>
+    </div>
+
+    <!-- Customer My Orders Screen -->
+    <div id="customer-orders-screen" class="hidden section">
+        <h2>My Orders</h2>
+        <div id="my-orders-list" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- Cart Screen -->
+    <div id="cart-screen" class="hidden section">
+        <h2>Your Cart</h2>
+        <div id="cart-items" style="margin: 20px 0;"></div>
+        <h3 id="cart-total" style="margin-bottom: 20px; color: var(--primary-color);">Total: ₹0</h3>
+        
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 500px;">
+            <h3>Delivery Details</h3>
+            <input type="text" id="del-address" class="input-field" placeholder="House No, Street, Landmark">
+            <input type="number" id="del-pin" class="input-field" placeholder="PIN Code (Only 752104)">
+            <p id="pin-error" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 10px;" class="hidden">Delivery not available for this PIN code.</p>
+            
+            <h3 style="margin-top: 15px;">Payment Mode</h3>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <label><input type="radio" name="pay-mode" value="COD" checked onchange="togglePayMode()"> Cash on Delivery</label>
+                <label><input type="radio" name="pay-mode" value="ONLINE" onchange="togglePayMode()"> Online (UPI)</label>
+            </div>
+
+            <!-- Online Payment Section -->
+            <div id="online-pay-section" class="hidden" style="margin-top: 15px; text-align: center; padding: 10px; border: 1px dashed #ccc;">
+                <p style="font-size:0.9rem; margin-bottom:10px;">Scan QR to Pay: <b>₹<span id="pay-amt">0</span></b></p>
+                <img id="cust-qr-code" src="" style="width: 150px; height: 150px; object-fit: cover; margin-bottom: 10px; display: none;">
+                <p id="no-qr-msg" style="color:var(--danger); font-size:0.8rem; display:none;">QR Not Available. Select COD.</p>
+                <input type="text" id="utr-input" class="input-field" placeholder="Enter 12-digit UTR/Ref Number">
+            </div>
+
+            <button class="btn" id="place-order-btn" onclick="placeOrder()">Place Order (COD)</button>
+        </div>
+    </div>
+
+    <!-- Payment Waiting Screen -->
+    <div id="payment-wait-screen" class="hidden section wait-screen">
+        <div class="loader"></div>
+        <h2 style="color: var(--primary-color);">Verifying Payment...</h2>
+        <p style="margin-top: 10px; color: #666;">Please wait while the admin confirms your payment.</p>
+        <p style="font-size:0.8rem; margin-top:5px;">Do not press back or refresh.</p>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div id="customer-bottom-nav" class="bottom-nav hidden">
+        <div class="nav-item active" onclick="navTo('customer-home')">🏠<br>Home</div>
+        <div class="nav-item" onclick="navTo('customer-orders-screen')">📦<br>Orders</div>
+        <div class="nav-item" onclick="navTo('cart-screen'); showCart();">🛒<br>Cart <span class="cart-badge" id="cart-count">0</span></div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="hidden section" style="padding-bottom: 20px;">
+        <div class="header" style="margin: -20px -20px 20px -20px; border-radius:0;">
+            <h2>Admin Dashboard</h2>
+            <button onclick="logoutAdmin()" style="background:transparent; color:white; border:none; cursor:pointer;">Logout</button>
+        </div>
+        
+        <div class="admin-nav">
+            <button class="btn btn-secondary" onclick="toggleAdminTab('orders')">Orders</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('products')">Inventory</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('reports')">Sales Report</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('settings')">Settings</button>
+        </div>
+
+        <!-- Admin: Orders -->
+        <div id="admin-orders">
+            <h3>Recent Orders</h3>
+            <div id="admin-order-list" style="margin-top: 15px; max-width: 600px;"></div>
+        </div>
+
+        <!-- Admin: Products -->
+        <div id="admin-products" class="hidden">
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; max-width: 500px;">
+                <h3 id="form-title">Add New Product</h3>
+                <input type="hidden" id="edit-prod-id">
+                <input type="text" id="new-prod-name" class="input-field" placeholder="Product Name">
+                <input type="number" id="new-prod-price" class="input-field" placeholder="Price (₹)">
+                <select id="new-prod-cat" class="input-field">
+                    <option value="Staples">Staples</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Drinks">Drinks</option>
+                </select>
+                <input type="text" id="new-prod-img" class="input-field" placeholder="Image URL (Leave blank for default)">
+                <button class="btn" id="save-prod-btn" onclick="saveProduct()">Add Product</button>
+                <button class="btn btn-secondary hidden" id="cancel-edit-btn" onclick="resetProductForm()">Cancel Edit</button>
+            </div>
+            <h3>Current Inventory</h3>
+            <div id="admin-inventory-list" style="margin-top: 10px; max-width: 600px;"></div>
+        </div>
+
+        <!-- Admin: Sales Report -->
+        <div id="admin-reports" class="hidden">
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 600px;">
+                <h3>Total Sales Revenue: <span style="color:var(--primary-color);">₹<span id="total-revenue-amt">0</span></span></h3>
+                <h4 style="margin-top: 20px;">Item-wise Sale Report</h4>
+                <table class="report-table">
+                    <thead><tr><th>Product Name</th><th>Qty Sold</th></tr></thead>
+                    <tbody id="item-sales-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Admin: Settings -->
+        <div id="admin-settings" class="hidden">
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 500px;">
+                <h3>Shop Details & Logo</h3>
+                <input type="text" id="set-shop-name" class="input-field" placeholder="Shop Name (E.g. Biju Super Mart)">
+                <input type="text" id="set-address" class="input-field" placeholder="Address & Timing">
+                
+                <label style="margin-top: 10px; display:block; font-weight:bold;">Upload Shop Logo (URL)</label>
+                <input type="text" id="set-logo-file" class="input-field" placeholder="Paste Logo Image URL here">
+                
+                <h3 style="margin-top: 20px;">Payment QR Code (For Online Pay)</h3>
+                <label style="display:block; font-weight:bold;">Upload UPI QR Image (URL)</label>
+                <input type="text" id="set-qr-file" class="input-field" placeholder="Paste QR Image URL here">
+                <img id="admin-qr-preview" src="" style="width: 100px; display: none; margin-top: 10px;">
+                
+                <button class="btn" onclick="saveSettings()" style="margin-top: 15px;">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Hidden Thermal Print Template -->
+<div id="thermal-receipt-container" style="display:none;">
+    <div id="thermal-receipt" style="width: 302px; padding: 15px; font-family: monospace; color: black; background: white; font-size: 14px;">
+        <h2 id="tr-shop-name" style="text-align: center; margin-bottom: 5px; font-size: 18px;">Shop Name</h2>
+        <p id="tr-address" style="text-align: center; font-size: 12px; margin-bottom: 10px;">Address</p>
+        <div style="border-bottom: 1px dashed black; margin-bottom: 10px;"></div>
+        <p><strong>Order ID:</strong> <span id="tr-order-id"></span></p>
+        <p><strong>Date:</strong> <span id="tr-date"></span></p>
+        <p><strong>Customer:</strong> <span id="tr-customer"></span></p>
+        <p><strong>Pay Mode:</strong> <span id="tr-paymode"></span></p>
+        <div style="border-bottom: 1px dashed black; margin: 10px 0;"></div>
+        <table style="width: 100%; text-align: left; font-size: 14px;">
+            <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right;">Amt</th></tr></thead>
+            <tbody id="tr-items"></tbody>
+        </table>
+        <div style="border-bottom: 1px dashed black; margin: 10px 0;"></div>
+        <h3 style="text-align: right; font-size: 16px;">Total: ₹<span id="tr-total"></span></h3>
+        <p style="text-align: center; margin-top: 15px; font-size: 12px;">Thank You! Visit Again.</p>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 1. FIREBASE CONFIGURATION YAHAN DALEIN
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyA7-fLETBmZiw39_nwTBi1v4GmPGYNB_m0",
+  authDomain: "biju-mart.firebaseapp.com",
+  databaseURL: "https://biju-mart-default-rtdb.firebaseio.com",
+  projectId: "biju-mart",
+  storageBucket: "biju-mart.firebasestorage.app",
+  messagingSenderId: "897539763161",
+  appId: "1:897539763161:web:f07951d66e62363b85c7c8",
+  measurementId: "G-LLP0JGN29Y"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    
+    // ==========================================
+    // State Management
+    // ==========================================
+    let currentUser = JSON.parse(localStorage.getItem('biju_user')) || null;
+    let cart = JSON.parse(localStorage.getItem('biju_cart')) || [];
+    let currentCategory = 'All';
+    let products = [];
+    let orders = [];
+    let shopSettings = { name: "Biju Super Mart", address: "📍 Mangalapur", logo: "https://via.placeholder.com/100", qrCode: "" };
+    let currentWaitOrderId = null;
+
+    // ==========================================
+    // Realtime Listeners (Firebase)
+    // ==========================================
+    window.onload = () => {
+        setupRealtimeListeners();
+        if (currentUser) { navTo('customer-home'); updateCartCount(); } 
+        else { showScreen('login-screen'); }
+    };
+
+    function setupRealtimeListeners() {
+        // Settings Listener
+        db.collection("settings").doc("shopDetails").onSnapshot((doc) => {
+            if(doc.exists) {
+                shopSettings = doc.data();
+                applySettings();
+            }
+        });
+
+        // Products Listener
+        db.collection("products").onSnapshot((snapshot) => {
+            products = [];
+            snapshot.forEach(doc => products.push({ dbId: doc.id, ...doc.data() }));
+            if(!document.getElementById('customer-home').classList.contains('hidden')) filterProducts();
+            if(!document.getElementById('admin-products').classList.contains('hidden')) renderAdminInventory();
+        });
+
+        // Orders Listener
+        db.collection("orders").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+            orders = [];
+            snapshot.forEach(doc => orders.push({ dbId: doc.id, ...doc.data() }));
+            
+            // Re-render active screens
+            if(!document.getElementById('customer-orders-screen').classList.contains('hidden')) renderMyOrders();
+            if(!document.getElementById('admin-orders').classList.contains('hidden')) renderAdminOrders();
+            if(!document.getElementById('admin-reports').classList.contains('hidden')) renderSalesReport();
+            
+            // Check Wait Screen Status
+            if(currentWaitOrderId) {
+                let waitOrder = orders.find(o => o.orderId === currentWaitOrderId);
+                if(waitOrder) {
+                    if(waitOrder.payStatus === 'Payment Confirmed') {
+                        currentWaitOrderId = null;
+                        alert("Payment Successful! Order Confirmed.");
+                        navTo('customer-orders-screen');
+                    } else if (waitOrder.payStatus === 'Payment Failed') {
+                        currentWaitOrderId = null;
+                        alert("Payment Verification Failed by Admin.");
+                        navTo('customer-orders-screen');
+                    }
+                }
+            }
+        });
+    }
+
+    function applySettings() {
+        document.getElementById('display-shop-name').innerText = shopSettings.name;
+        document.getElementById('display-address').innerText = shopSettings.address;
+        document.getElementById('display-logo').src = shopSettings.logo;
+        document.getElementById('login-shop-name').innerText = shopSettings.name;
+        document.getElementById('login-logo').src = shopSettings.logo;
+        document.getElementById('set-shop-name').value = shopSettings.name;
+        document.getElementById('set-address').value = shopSettings.address;
+        document.getElementById('set-logo-file').value = shopSettings.logo;
+        document.getElementById('set-qr-file').value = shopSettings.qrCode;
+        
+        if(shopSettings.qrCode) {
+            document.getElementById('admin-qr-preview').src = shopSettings.qrCode;
+            document.getElementById('admin-qr-preview').style.display = 'block';
+            document.getElementById('cust-qr-code').src = shopSettings.qrCode;
+        }
+    }
+
+    // ==========================================
+    // Navigation
+    // ==========================================
+    function showScreen(screenId) {
+        document.querySelectorAll('.app-container > div.section, #customer-home').forEach(div => div.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function navTo(screenId) {
+        showScreen(screenId);
+        if(screenId !== 'login-screen' && screenId !== 'admin-login-screen' && screenId !== 'admin-dashboard' && screenId !== 'payment-wait-screen') {
+            document.getElementById('customer-bottom-nav').classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(screenId === 'customer-home') { document.querySelectorAll('.nav-item')[0].classList.add('active'); filterProducts(); }
+            if(screenId === 'customer-orders-screen') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderMyOrders(); }
+            if(screenId === 'cart-screen') document.querySelectorAll('.nav-item')[2].classList.add('active');
+        } else {
+            document.getElementById('customer-bottom-nav').classList.add('hidden');
+        }
+    }
+
+    // ==========================================
+    // Customer Auth & Cart
+    // ==========================================
+    function registerUser() {
+        const name = document.getElementById('cust-name').value.trim();
+        const phone = document.getElementById('cust-phone').value.trim();
+        if (name && phone.length >= 10) {
+            currentUser = { name, phone };
+            localStorage.setItem('biju_user', JSON.stringify(currentUser)); 
+            navTo('customer-home');
+        } else { alert("Please enter valid Name and Mobile Number"); }
+    }
+    function logout() { localStorage.removeItem('biju_user'); currentUser = null; navTo('login-screen'); }
+
+    function setCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-badge').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active'); filterProducts();
+    }
+    function filterProducts() {
+        const grid = document.getElementById('product-list');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        grid.innerHTML = '';
+        let filtered = products.filter(p => (currentCategory === 'All' || p.cat === currentCategory) && p.name.toLowerCase().includes(searchTerm));
+        if(!filtered.length) { grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">No products found.</p>'; return; }
+        filtered.forEach(p => {
+            grid.innerHTML += `
+                <div class="product-card">
+                    <img src="${p.img}" alt="${p.name}">
+                    <h3>${p.name}</h3>
+                    <p>₹${p.price}</p>
+                    <button class="btn" style="padding: 6px;" onclick="addToCart('${p.dbId}')">Add to Cart</button>
+                </div>
+            `;
+        });
+    }
+
+    function addToCart(dbId) {
+        const product = products.find(p => p.dbId === dbId);
+        const item = cart.find(i => i.dbId === dbId);
+        item ? item.qty += 1 : cart.push({ ...product, qty: 1 });
+        saveCart();
+    }
+    function updateQty(dbId, change) {
+        const item = cart.find(i => i.dbId === dbId);
+        if(item) { item.qty += change; if(item.qty <= 0) cart = cart.filter(i => i.dbId !== dbId); saveCart(); showCart(); }
+    }
+    function saveCart() { localStorage.setItem('biju_cart', JSON.stringify(cart)); updateCartCount(); }
+    function updateCartCount() { document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + i.qty, 0); }
+
+    function showCart() {
+        const cartDiv = document.getElementById('cart-items');
+        let total = 0; cartDiv.innerHTML = '';
+        if(!cart.length) { cartDiv.innerHTML = '<p>Your cart is empty.</p>'; document.getElementById('cart-total').innerText = `Total: ₹0`; return; }
+
+        cart.forEach(item => {
+            total += item.price * item.qty;
+            cartDiv.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:10px 0;">
+                    <div><strong>${item.name}</strong><br><small>₹${item.price} x ${item.qty}</small></div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button style="width:25px;height:25px;border:none;background:#ddd;" onclick="updateQty('${item.dbId}', -1)">-</button>
+                        <span>${item.qty}</span>
+                        <button style="width:25px;height:25px;border:none;background:#ddd;" onclick="updateQty('${item.dbId}', 1)">+</button>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('cart-total').innerText = `Total: ₹${total}`;
+        document.getElementById('pay-amt').innerText = total;
+    }
+
+    function togglePayMode() {
+        const mode = document.querySelector('input[name="pay-mode"]:checked').value;
+        const onlineSec = document.getElementById('online-pay-section');
+        const btn = document.getElementById('place-order-btn');
+        if(mode === 'ONLINE') {
+            onlineSec.classList.remove('hidden');
+            if(shopSettings.qrCode) {
+                document.getElementById('cust-qr-code').style.display = 'inline-block';
+                document.getElementById('no-qr-msg').style.display = 'none';
+                btn.innerText = 'Verify UTR & Place Order';
+            } else {
+                document.getElementById('cust-qr-code').style.display = 'none';
+                document.getElementById('no-qr-msg').style.display = 'block';
+                btn.innerText = 'QR Not Setup (Use COD)';
+            }
+        } else {
+            onlineSec.classList.add('hidden');
+            btn.innerText = 'Place Order (COD)';
+        }
+    }
+
+    // Place Order to Firestore
+    function placeOrder() {
+        const address = document.getElementById('del-address').value.trim();
+        const pin = document.getElementById('del-pin').value;
+        const pinError = document.getElementById('pin-error');
+        if (pin !== "752104") { pinError.classList.remove('hidden'); return; }
+        pinError.classList.add('hidden');
+        if(!cart.length) return alert("Cart is empty");
+        if(!address) return alert("Please enter delivery address");
+
+        const payMode = document.querySelector('input[name="pay-mode"]:checked').value;
+        let utr = "";
+        if(payMode === 'ONLINE') {
+            if(!shopSettings.qrCode) return alert("Online payment currently unavailable. Choose COD.");
+            utr = document.getElementById('utr-input').value.trim();
+            if(!utr || utr.length < 8) return alert("Please enter valid UTR/Reference number.");
+        }
+
+        const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const orderId = 'ORD' + Math.floor(Math.random() * 100000);
+        
+        const newOrder = {
+            orderId: orderId,
+            customer: currentUser, address: address, items: cart, total: total,
+            status: 'Pending', date: new Date().toLocaleString(),
+            payMode: payMode, utr: utr, payStatus: payMode === 'ONLINE' ? 'Pending Verification' : 'COD',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        db.collection("orders").add(newOrder).then(() => {
+            cart = []; saveCart();
+            if(payMode === 'ONLINE') {
+                currentWaitOrderId = orderId;
+                navTo('payment-wait-screen');
+            } else {
+                alert("Order Placed Successfully!");
+                navTo('customer-orders-screen');
+            }
+        }).catch(err => alert("Error placing order: " + err));
+    }
+
+    function renderMyOrders() {
+        const list = document.getElementById('my-orders-list');
+        const myOrders = orders.filter(o => o.customer.phone === currentUser.phone);
+        list.innerHTML = myOrders.length ? '' : '<p>You have no orders yet.</p>';
+        myOrders.forEach(ord => {
+            let badge = ord.status === 'Pending' ? '#ffe0b2' : ord.status === 'Confirmed' ? '#bbdefb' : '#c8e6c9';
+            let color = ord.status === 'Pending' ? '#e65100' : ord.status === 'Confirmed' ? '#0d47a1' : '#1b5e20';
+            let payText = ord.payMode === 'ONLINE' ? `Online (${ord.payStatus})` : 'COD';
+            list.innerHTML += `
+                <div class="order-card">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${ord.orderId}</strong>
+                        <span style="background:${badge}; color:${color}; padding:3px 8px; border-radius:5px; font-size:0.8rem;">${ord.status}</span>
+                    </div>
+                    <p style="font-size:0.8rem; color:gray; margin-bottom:5px;">${ord.date}</p>
+                    <p style="font-size:0.9rem;"><strong>Items:</strong> ${ord.items.map(i => `${i.name}(${i.qty})`).join(', ')}</p>
+                    <p style="font-size:0.9rem;"><strong>Payment:</strong> ${payText}</p>
+                    <p style="margin-top:5px; font-weight:bold;">Total: ₹${ord.total}</p>
+                </div>
+            `;
+        });
+    }
+
+    // ==========================================
+    // Admin Functions
+    // ==========================================
+    function showAdminLogin() { showScreen('admin-login-screen'); }
+    function loginAdmin() {
+        if (document.getElementById('admin-pass').value === '752104') {
+            navTo('admin-dashboard'); renderAdminOrders(); renderAdminInventory(); renderSalesReport();
+        } else { alert("Incorrect Password"); }
+    }
+    function logoutAdmin() { navTo('login-screen'); document.getElementById('admin-pass').value = ''; }
+
+    function toggleAdminTab(tab) {
+        ['orders', 'products', 'reports', 'settings'].forEach(t => document.getElementById(`admin-${t}`).classList.add('hidden'));
+        document.getElementById(`admin-${tab}`).classList.remove('hidden');
+    }
+
+    // Settings Firebase Save
+    function saveSettings() {
+        const name = document.getElementById('set-shop-name').value.trim() || shopSettings.name;
+        const address = document.getElementById('set-address').value.trim() || shopSettings.address;
+        const logo = document.getElementById('set-logo-file').value.trim() || shopSettings.logo;
+        const qrCode = document.getElementById('set-qr-file').value.trim() || shopSettings.qrCode;
+        
+        db.collection("settings").doc("shopDetails").set({ name, address, logo, qrCode })
+          .then(() => alert("Settings Saved!"))
+          .catch(err => alert("Error: " + err));
+    }
+
+    // Orders Firebase Updates
+    function renderAdminOrders() {
+        const orderList = document.getElementById('admin-order-list');
+        orderList.innerHTML = orders.length ? '' : '<p>No orders yet.</p>';
+        orders.forEach(ord => {
+            let onlineActions = '';
+            if(ord.payMode === 'ONLINE') {
+                let badge = ord.payStatus === 'Payment Confirmed' ? 'color:green' : (ord.payStatus === 'Payment Failed' ? 'color:red' : 'color:orange');
+                onlineActions = `
+                    <div style="background:#fff3e0; padding:10px; margin:10px 0; border-radius:5px;">
+                        <p><strong>Mode:</strong> Online | <strong>UTR:</strong> ${ord.utr}</p>
+                        <p><strong>Pay Status:</strong> <span style="${badge}; font-weight:bold;">${ord.payStatus}</span></p>
+                        ${ord.payStatus === 'Pending Verification' ? `<button class="btn btn-small" onclick="verifyPayment('${ord.dbId}', true)">Confirm Payment</button> <button class="btn btn-small btn-danger" onclick="verifyPayment('${ord.dbId}', false)">Reject Payment</button>` : ''}
+                    </div>
+                `;
+            } else {
+                onlineActions = `<p style="margin:5px 0;"><strong>Mode:</strong> COD</p>`;
+            }
+
+            orderList.innerHTML += `
+                <div class="order-card">
+                    <div style="display:flex; justify-content:space-between;">
+                        <h4>${ord.orderId}</h4>
+                        <select onchange="changeOrderStatus('${ord.dbId}', this.value)" style="padding:5px; border-radius:5px;">
+                            <option value="Pending" ${ord.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Confirmed" ${ord.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        </select>
+                    </div>
+                    <p><strong>Customer:</strong> ${ord.customer.name} (${ord.customer.phone})</p>
+                    <p><strong>Address:</strong> ${ord.address}</p>
+                    ${onlineActions}
+                    <p><strong>Total:</strong> ₹${ord.total}</p>
+                    <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                        <button class="btn btn-small" style="background:#25D366;" onclick="window.open('https://wa.me/91${ord.customer.phone}?text=${encodeURIComponent(`Hello from ${shopSettings.name}! Your order ${ord.orderId} status is now: ${ord.status}.`)}', '_blank')">WhatsApp</button>
+                        <button class="btn btn-small btn-secondary" onclick="generateThermalBill('${ord.orderId}', 'download')">Download Bill</button>
+                        <button class="btn btn-small btn-secondary" onclick="generateThermalBill('${ord.orderId}', 'share')">Share Bill</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function verifyPayment(dbId, isValid) {
+        db.collection("orders").doc(dbId).update({
+            payStatus: isValid ? 'Payment Confirmed' : 'Payment Failed',
+            status: isValid ? 'Confirmed' : 'Pending'
+        });
+    }
+
+    function changeOrderStatus(dbId, newStatus) {
+        db.collection("orders").doc(dbId).update({ status: newStatus });
+    }
+
+    // Print Logic
+    async function generateThermalBill(orderId, action) {
+        const ord = orders.find(o => o.orderId === orderId);
+        if(!ord) return;
+        document.getElementById('tr-shop-name').innerText = shopSettings.name;
+        document.getElementById('tr-address').innerText = shopSettings.address;
+        document.getElementById('tr-order-id').innerText = ord.orderId;
+        document.getElementById('tr-date').innerText = ord.date;
+        document.getElementById('tr-customer').innerText = `${ord.customer.name} (${ord.customer.phone})`;
+        document.getElementById('tr-paymode').innerText = ord.payMode === 'ONLINE' ? `Online (${ord.utr})` : 'COD';
+        
+        const tbody = document.getElementById('tr-items');
+        tbody.innerHTML = '';
+        ord.items.forEach(i => { tbody.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align:right;">₹${i.price * i.qty}</td></tr>`; });
+        document.getElementById('tr-total').innerText = ord.total;
+
+        const element = document.getElementById('thermal-receipt');
+        element.parentElement.style.display = 'block';
+
+        const opt = { margin: 0, filename: `Bill_${ord.orderId}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: [3.15, 6], orientation: 'portrait' } };
+
+        if(action === 'download') {
+            await html2pdf().set(opt).from(element).save();
+            element.parentElement.style.display = 'none';
+        } else if (action === 'share') {
+            try {
+                const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+                const file = new File([pdfBlob], `Bill_${ord.orderId}.pdf`, { type: "application/pdf" });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ title: 'Your Order Bill', text: `Here is your bill from ${shopSettings.name}`, files: [file] });
+                } else { alert("Share not supported. Download instead."); }
+            } catch (err) { console.error(err); }
+            element.parentElement.style.display = 'none';
+        }
+    }
+
+    // Sales Report
+    function renderSalesReport() {
+        let totalRevenue = 0;
+        let itemSales = {};
+        orders.forEach(ord => {
+            if(ord.status !== 'Cancelled' && ord.payStatus !== 'Payment Failed') {
+                totalRevenue += ord.total;
+                ord.items.forEach(i => { itemSales[i.name] = (itemSales[i.name] || 0) + i.qty; });
+            }
+        });
+        document.getElementById('total-revenue-amt').innerText = totalRevenue;
+        const tbody = document.getElementById('item-sales-tbody');
+        tbody.innerHTML = '';
+        Object.keys(itemSales).forEach(itemName => { tbody.innerHTML += `<tr><td>${itemName}</td><td>${itemSales[itemName]}</td></tr>`; });
+    }
+
+    // Inventory Firebase CRUD
+    function renderAdminInventory() {
+        const invList = document.getElementById('admin-inventory-list');
+        invList.innerHTML = '';
+        products.forEach(p => {
+            invList.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:10px 0;">
+                    <div><strong>${p.name}</strong><br><small>₹${p.price} | ${p.cat}</small></div>
+                    <div>
+                        <button class="btn-small btn-secondary" onclick="loadEditForm('${p.dbId}')">Edit</button>
+                        <button class="btn-small btn-danger" onclick="deleteProduct('${p.dbId}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function saveProduct() {
+        const id = document.getElementById('edit-prod-id').value;
+        const name = document.getElementById('new-prod-name').value;
+        const price = Number(document.getElementById('new-prod-price').value);
+        const cat = document.getElementById('new-prod-cat').value;
+        let img = document.getElementById('new-prod-img').value;
+        if (!name || !price) return alert("Please fill name and price");
+        if (!img) img = `https://via.placeholder.com/150/e0e0e0/808080?text=${name.substring(0,5)}`;
+
+        const prodData = { name, price, cat, img };
+
+        if(id) {
+            db.collection("products").doc(id).update(prodData).then(() => resetProductForm());
+        } else {
+            db.collection("products").add(prodData).then(() => resetProductForm());
+        }
+    }
+
+    function loadEditForm(dbId) {
+        const p = products.find(p => p.dbId === dbId);
+        document.getElementById('edit-prod-id').value = p.dbId;
+        document.getElementById('new-prod-name').value = p.name;
+        document.getElementById('new-prod-price').value = p.price;
+        document.getElementById('new-prod-cat').value = p.cat;
+        document.getElementById('new-prod-img').value = p.img.includes('placeholder') ? '' : p.img;
+        document.getElementById('form-title').innerText = "Edit Product";
+        document.getElementById('save-prod-btn').innerText = "Update Product";
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+    function resetProductForm() {
+        document.getElementById('edit-prod-id').value = ''; document.getElementById('new-prod-name').value = '';
+        document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-img').value = '';
+        document.getElementById('form-title').innerText = "Add New Product";
+        document.getElementById('save-prod-btn').innerText = "Add Product";
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+    }
+    function deleteProduct(dbId) {
+        if(confirm("Delete this product?")) {
+            db.collection("products").doc(dbId).delete();
+        }
+    }
+</script>
+</body>
+</html>
