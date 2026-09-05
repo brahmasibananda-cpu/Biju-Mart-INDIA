@@ -6,7 +6,7 @@
     <title>Biju Super Mart</title>
     <!-- PDF Generation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- QR Code Generator Library -->
+    <!-- QR Code Generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -170,19 +170,11 @@
                 <label><input type="radio" name="pay-mode" value="ONLINE" onchange="togglePayMode()"> Online (UPI)</label>
             </div>
 
-            <!-- Dynamic UPI Online Payment Section -->
             <div id="online-pay-section" class="hidden" style="margin-top: 15px; text-align: center; padding: 15px; border: 2px dashed var(--primary-color); border-radius: 10px; background:#f9fff9;">
                 <p style="font-size:0.9rem; margin-bottom:10px;">Scan QR or Click to Pay: <b style="font-size:1.2rem; color:var(--primary-color);">₹<span id="pay-amt">0</span></b></p>
-                
-                <div class="qr-container" style="margin: 5px auto 15px;">
-                    <div id="cust-dynamic-qr"></div>
-                </div>
-
-                <!-- Deep Link Button for PhonePe/GPay -->
+                <div class="qr-container" style="margin: 5px auto 15px;"><div id="cust-dynamic-qr"></div></div>
                 <a id="upi-intent-btn" href="#" class="btn btn-upi" style="display:none;">🚀 Pay via PhonePe / GPay</a>
-
                 <p id="no-qr-msg" style="color:var(--danger); font-size:0.8rem; display:none;">Admin UPI ID Not Setup. Select COD.</p>
-                
                 <p style="font-size:0.85rem; color:#555; margin-bottom:5px;">After payment, enter UTR below:</p>
                 <input type="text" id="utr-input" class="input-field" placeholder="Enter 12-digit UTR/Ref Number">
             </div>
@@ -264,7 +256,7 @@
             <div style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                 <h3>Upload Promo Banners (Max 5)</h3>
                 <input type="file" id="banner-upload-input" class="input-field" accept="image/*" multiple>
-                <button class="btn" onclick="uploadBanners()">Upload Banners</button>
+                <button class="btn" id="upload-banner-btn" onclick="uploadBanners()">Upload Banners</button>
             </div>
             <h3>Current Banners</h3>
             <div id="admin-banner-list" style="margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px;"></div>
@@ -275,10 +267,8 @@
                 <h3 style="color:var(--primary-dark);">App Link & QR Code</h3>
                 <p style="font-size: 0.8rem; color: gray;">Paste your website link here to generate a scanable QR code for customers.</p>
                 <input type="url" id="set-app-url" class="input-field" placeholder="E.g. https://bijusupermart.web.app">
-                <div class="qr-container" style="display:none;" id="admin-qr-container">
-                    <div id="admin-app-qr"></div>
-                </div>
-                <button class="btn" onclick="saveAppUrl()" style="margin-top: 10px;">Save Link & Generate QR</button>
+                <div class="qr-container" style="display:none;" id="admin-qr-container"><div id="admin-app-qr"></div></div>
+                <button class="btn" id="save-url-btn" onclick="saveAppUrl()" style="margin-top: 10px;">Save Link & Generate QR</button>
             </div>
 
             <div style="background: #fff; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
@@ -288,12 +278,11 @@
                 <label style="margin-top: 15px; display:block; font-weight:bold; font-size: 0.9rem;">Upload Shop Logo</label>
                 <input type="file" id="set-logo-file" class="input-field" accept="image/*">
                 
-                <!-- CHANGED TO TEXT INPUT FOR UPI ID -->
                 <h3 style="margin-top: 25px;">Payment Integration (Auto QR/PhonePe)</h3>
-                <label style="display:block; font-weight:bold; font-size: 0.9rem;">Enter Admin UPI ID (PhonePe/GPay)</label>
+                <label style="display:block; font-weight:bold; font-size: 0.9rem;">Enter Admin UPI ID</label>
                 <input type="text" id="set-upi-id" class="input-field" placeholder="e.g. 9876543210@ybl or name@okicici">
                 
-                <button class="btn" onclick="saveSettings()" style="margin-top: 20px;">Save Shop Details</button>
+                <button class="btn" id="save-settings-btn" onclick="saveSettings()" style="margin-top: 20px;">Save Shop Details</button>
             </div>
             
             <div style="background: #fff; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 20px;">
@@ -326,37 +315,48 @@
 
 <script>
     // ==========================================
-    // 1. APNA FIREBASE CONFIGURATION YAHAN DALEIN
+    // FIREBASE CONFIGURATION
     // ==========================================
     const firebaseConfig = {
         apiKey: "AIzaSyAphaeRh9xCSEuax39qVIT-RsICpjRcxLI",
-  authDomain: "biju-super-mart-new-446c1.firebaseapp.com",
-  projectId: "biju-super-mart-new-446c1",
-  storageBucket: "biju-super-mart-new-446c1.firebasestorage.app",
-  messagingSenderId: "665014596861",
-  appId: "1:665014596861:web:240a253195890e2343ba94",
-  measurementId: "G-7ECX2JVJFC"
+        authDomain: "biju-super-mart-new-446c1.firebaseapp.com",
+        projectId: "biju-super-mart-new-446c1",
+        storageBucket: "biju-super-mart-new-446c1.firebasestorage.app",
+        messagingSenderId: "665014596861",
+        appId: "1:665014596861:web:240a253195890e2343ba94",
+        measurementId: "G-7ECX2JVJFC"
     };
 
     if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.firestore();
+
+    // ==========================================
+    // NETWORK TIMEOUT WRAPPER (Fixes Processing Bug)
+    // ==========================================
+    function dbWrite(promise) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("Firebase Database Connect Nahi Ho Raha Hai! Kripya Firestore Database aur Rules check karein.")), 8000);
+            promise.then(res => { clearTimeout(timer); resolve(res); }).catch(err => { clearTimeout(timer); reject(err); });
+        });
+    }
     
+    // State Management
     let currentUser = JSON.parse(localStorage.getItem('biju_user')) || null;
     let cart = JSON.parse(localStorage.getItem('biju_cart')) || [];
     let currentWaitOrderId = localStorage.getItem('wait_order_id') || null;
     let currentCategory = 'All';
     let products = [], categories = [], orders = [];
-    
-    // upiId added to settings state
     let shopSettings = { name: "Biju Super Mart", address: "📍 Mangalapur", logo: "", upiId: "", banners: [], appUrl: "" };
     
     let sliderInterval;
     let adminQRInstance = null;
     let custQRInstance = null;
 
+    // Advanced Image Compressor
     function compressImage(file, maxWidth) {
-        return new Promise((resolve) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file);
             reader.onload = (e) => {
                 const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
@@ -366,8 +366,10 @@
                     canvas.width = newWidth; canvas.height = newHeight;
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, newWidth, newHeight);
                     resolve(canvas.toDataURL('image/jpeg', 0.5));
-                }
-            }
+                };
+                img.onerror = () => reject(new Error("Image format error"));
+            };
+            reader.onerror = () => reject(new Error("File read error"));
         });
     }
 
@@ -414,18 +416,13 @@
     }
 
     function applySettings() {
-        document.getElementById('display-shop-name').innerText = shopSettings.name;
-        document.getElementById('display-address').innerText = shopSettings.address;
-        document.getElementById('login-shop-name').innerText = shopSettings.name;
-        document.getElementById('set-shop-name').value = shopSettings.name;
-        document.getElementById('set-address').value = shopSettings.address;
-        document.getElementById('set-app-url').value = shopSettings.appUrl;
-        document.getElementById('set-upi-id').value = shopSettings.upiId; // Admin Form Input
+        document.getElementById('display-shop-name').innerText = shopSettings.name; document.getElementById('display-address').innerText = shopSettings.address;
+        document.getElementById('login-shop-name').innerText = shopSettings.name; document.getElementById('set-shop-name').value = shopSettings.name;
+        document.getElementById('set-address').value = shopSettings.address; document.getElementById('set-app-url').value = shopSettings.appUrl;
+        document.getElementById('set-upi-id').value = shopSettings.upiId;
         
         if (shopSettings.logo) {
-            document.getElementById('display-logo').src = shopSettings.logo;
-            document.getElementById('login-logo').src = shopSettings.logo;
-            document.getElementById('qr-center-img').src = shopSettings.logo;
+            document.getElementById('display-logo').src = shopSettings.logo; document.getElementById('login-logo').src = shopSettings.logo; document.getElementById('qr-center-img').src = shopSettings.logo;
         }
     }
 
@@ -442,7 +439,10 @@
 
     function saveAppUrl() {
         const url = document.getElementById('set-app-url').value.trim();
-        db.collection("settings").doc("shopDetails").set({ appUrl: url }, { merge: true }).then(() => alert("App Link Saved & QR Updated!")).catch(e => alert("Error: " + e.message));
+        const btn = document.getElementById('save-url-btn'); btn.innerText = "Saving..."; btn.disabled = true;
+        dbWrite(db.collection("settings").doc("shopDetails").set({ appUrl: url }, { merge: true }))
+          .then(() => { alert("App Link Saved & QR Updated!"); btn.innerText = "Save Link & Generate QR"; btn.disabled = false; })
+          .catch(e => { alert(e.message); btn.innerText = "Save Link & Generate QR"; btn.disabled = false; });
     }
 
     function shareAppUrl() {
@@ -541,59 +541,35 @@
         document.getElementById('cart-total').innerText = `Total: ₹${total}`; document.getElementById('pay-amt').innerText = total;
     }
 
-    // ==========================================
-    // Dynamic UPI Payment Logic
-    // ==========================================
     function togglePayMode() {
         const mode = document.querySelector('input[name="pay-mode"]:checked').value;
-        const onlineSec = document.getElementById('online-pay-section'); 
-        const btn = document.getElementById('place-order-btn');
-        const intentBtn = document.getElementById('upi-intent-btn');
-        const dynamicQrBox = document.getElementById('cust-dynamic-qr');
+        const onlineSec = document.getElementById('online-pay-section'); const btn = document.getElementById('place-order-btn');
+        const intentBtn = document.getElementById('upi-intent-btn'); const dynamicQrBox = document.getElementById('cust-dynamic-qr');
         
         if(mode === 'ONLINE') {
             onlineSec.classList.remove('hidden');
-            
             if(shopSettings.upiId) {
-                // Calculate dynamic total
                 const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-                
-                // Construct standard UPI deep link string
-                // format: upi://pay?pa=UPIID&pn=Name&am=Amount&cu=INR
                 const upiLink = `upi://pay?pa=${shopSettings.upiId}&pn=${encodeURIComponent(shopSettings.name)}&am=${total}&cu=INR`;
-                
-                // Clear old dynamic QR and create new one with correct amount
-                dynamicQrBox.innerHTML = '';
-                new QRCode(dynamicQrBox, { text: upiLink, width: 150, height: 150, colorDark: "#1b5e20", correctLevel: QRCode.CorrectLevel.H });
-                
-                // Set the link for the PhonePe/GPay Button
-                intentBtn.href = upiLink;
-                intentBtn.style.display = 'inline-block';
-                
-                document.getElementById('no-qr-msg').style.display = 'none';
-                btn.innerText = 'Verify UTR & Place Order'; btn.disabled = false;
+                dynamicQrBox.innerHTML = ''; new QRCode(dynamicQrBox, { text: upiLink, width: 150, height: 150, colorDark: "#1b5e20", correctLevel: QRCode.CorrectLevel.H });
+                intentBtn.href = upiLink; intentBtn.style.display = 'inline-block';
+                document.getElementById('no-qr-msg').style.display = 'none'; btn.innerText = 'Verify UTR & Place Order'; btn.disabled = false;
             } else {
-                dynamicQrBox.innerHTML = '';
-                intentBtn.style.display = 'none';
+                dynamicQrBox.innerHTML = ''; intentBtn.style.display = 'none';
                 document.getElementById('no-qr-msg').innerText = "Admin has not set UPI ID in settings.";
-                document.getElementById('no-qr-msg').style.display = 'block';
-                btn.innerText = 'UPI Not Setup (Use COD)'; btn.disabled = true; 
+                document.getElementById('no-qr-msg').style.display = 'block'; btn.innerText = 'UPI Not Setup (Use COD)'; btn.disabled = true; 
             }
-        } else { 
-            onlineSec.classList.add('hidden'); btn.innerText = 'Place Order (COD)'; btn.disabled = false; 
-        }
+        } else { onlineSec.classList.add('hidden'); btn.innerText = 'Place Order (COD)'; btn.disabled = false; }
     }
 
     function placeOrder() {
         const address = document.getElementById('del-address').value.trim(); const pin = document.getElementById('del-pin').value.trim();
         const pinError = document.getElementById('pin-error');
-        
         if (pin !== "752104") { pinError.classList.remove('hidden'); return; }
         pinError.classList.add('hidden');
         if(!cart.length) return alert("Cart is empty"); if(!address) return alert("Please enter delivery address");
 
         const payMode = document.querySelector('input[name="pay-mode"]:checked').value; let utr = "";
-        
         if(payMode === 'ONLINE') {
             utr = document.getElementById('utr-input').value.trim();
             if(!utr || utr.length < 8) return alert("Please enter valid UTR Number (Min 8 digits).");
@@ -606,7 +582,8 @@
         const btn = document.getElementById('place-order-btn'); const originalText = btn.innerText;
         btn.innerText = "Processing..."; btn.disabled = true;
 
-        db.collection("orders").add(newOrder).then(() => {
+        dbWrite(db.collection("orders").add(newOrder))
+        .then(() => {
             btn.innerText = originalText; btn.disabled = false;
             cart = []; saveCart();
             if(payMode === 'ONLINE') { 
@@ -614,7 +591,7 @@
             } else { alert("Order Placed Successfully!"); navTo('customer-orders-screen'); }
         }).catch((error) => {
             btn.innerText = originalText; btn.disabled = false;
-            alert("Order place failed: " + error.message + "\n\n(DHYAN DEIN: Firebase Database ke 'Rules' ko update karein!)");
+            alert(error.message);
         });
     }
 
@@ -649,26 +626,32 @@
     async function saveSettings() {
         const name = document.getElementById('set-shop-name').value.trim() || shopSettings.name; 
         const address = document.getElementById('set-address').value.trim() || shopSettings.address;
-        const upiId = document.getElementById('set-upi-id').value.trim() || shopSettings.upiId; // NEW UPI INPUT
+        const upiId = document.getElementById('set-upi-id').value.trim() || shopSettings.upiId; 
         const logoFile = document.getElementById('set-logo-file').files[0]; 
         
-        let data = { name, address, upiId };
-        if(logoFile) data.logo = await compressImage(logoFile, 300); 
+        const btn = document.getElementById('save-settings-btn'); btn.innerText = "Saving..."; btn.disabled = true;
         
-        db.collection("settings").doc("shopDetails").set(data, { merge: true }).then(() => {
-            alert("Settings Saved Successfully!");
-            document.getElementById('set-logo-file').value = ''; 
-        }).catch(e => alert("Error saving settings: " + e.message));
+        try {
+            let data = { name, address, upiId };
+            if(logoFile) data.logo = await compressImage(logoFile, 200); 
+            await dbWrite(db.collection("settings").doc("shopDetails").set(data, { merge: true }));
+            alert("Settings Saved Successfully!"); document.getElementById('set-logo-file').value = ''; 
+        } catch(e) { alert(e.message); }
+        btn.innerText = "Save Shop Details"; btn.disabled = false;
     }
 
     async function uploadBanners() {
         const files = document.getElementById('banner-upload-input').files;
         if(files.length === 0) return alert("Select at least 1 image"); if(files.length > 5) return alert("Max 5 images allowed");
-        let newBanners = [];
-        for(let i=0; i<files.length; i++) { const b64 = await compressImage(files[i], 800); newBanners.push(b64); }
-        db.collection("settings").doc("shopDetails").set({ banners: newBanners }, { merge: true }).then(() => {
+        
+        const btn = document.getElementById('upload-banner-btn'); btn.innerText = "Uploading..."; btn.disabled = true;
+        try {
+            let newBanners = [];
+            for(let i=0; i<files.length; i++) { const b64 = await compressImage(files[i], 600); newBanners.push(b64); }
+            await dbWrite(db.collection("settings").doc("shopDetails").set({ banners: newBanners }, { merge: true }));
             alert("Banners Updated Successfully!"); document.getElementById('banner-upload-input').value = '';
-        }).catch(e => alert("Error: " + e.message));
+        } catch(e) { alert(e.message); }
+        btn.innerText = "Upload Banners"; btn.disabled = false;
     }
     
     function renderAdminBanners() {
@@ -690,10 +673,15 @@
     async function saveCategory() {
         const id = document.getElementById('edit-cat-id').value; const name = document.getElementById('new-cat-name').value.trim(); const file = document.getElementById('new-cat-img').files[0];
         if(!name) return alert("Enter Category Name");
-        let imageBase64 = null; if(file) imageBase64 = await compressImage(file, 200);
-        let data = { name }; if(imageBase64) data.image = imageBase64;
-        if(id) { db.collection("categories").doc(id).update(data).then(resetCatForm).catch(e => alert(e.message)); } 
-        else { db.collection("categories").add(data).then(resetCatForm).catch(e => alert(e.message)); }
+        const btn = document.getElementById('save-cat-btn'); btn.innerText = "Saving..."; btn.disabled = true;
+        try {
+            let imageBase64 = null; if(file) imageBase64 = await compressImage(file, 200);
+            let data = { name }; if(imageBase64) data.image = imageBase64;
+            if(id) { await dbWrite(db.collection("categories").doc(id).update(data)); } 
+            else { await dbWrite(db.collection("categories").add(data)); }
+            resetCatForm();
+        } catch(e) { alert(e.message); }
+        btn.innerText = "Save Category"; btn.disabled = false;
     }
     function loadCatEdit(dbId) {
         const c = categories.find(c => c.dbId === dbId); document.getElementById('edit-cat-id').value = c.dbId; document.getElementById('new-cat-name').value = c.name;
@@ -703,7 +691,7 @@
         document.getElementById('edit-cat-id').value = ''; document.getElementById('new-cat-name').value = ''; document.getElementById('new-cat-img').value = '';
         document.getElementById('cat-form-title').innerText = "Add New Category"; document.getElementById('save-cat-btn').innerText = "Save Category"; document.getElementById('cancel-cat-btn').classList.add('hidden');
     }
-    function deleteCategory(dbId) { if(confirm("Delete Category?")) db.collection("categories").doc(dbId).delete(); }
+    function deleteCategory(dbId) { if(confirm("Delete Category?")) dbWrite(db.collection("categories").doc(dbId).delete()).catch(e=>alert(e.message)); }
 
     function renderAdminInventory() {
         const invList = document.getElementById('admin-inventory-list'); invList.innerHTML = '';
@@ -720,10 +708,15 @@
         const id = document.getElementById('edit-prod-id').value; const name = document.getElementById('new-prod-name').value;
         const price = Number(document.getElementById('new-prod-price').value); const cat = document.getElementById('new-prod-cat').value; const file = document.getElementById('new-prod-img').files[0];
         if (!name || !price || !cat) return alert("Fill all details");
-        let img = null; if(file) img = await compressImage(file, 400);
-        let data = { name, price, cat }; if(img) data.img = img;
-        if(id) { db.collection("products").doc(id).update(data).then(resetProductForm).catch(e => alert(e.message)); } 
-        else { db.collection("products").add(data).then(resetProductForm).catch(e => alert(e.message)); }
+        const btn = document.getElementById('save-prod-btn'); btn.innerText = "Saving..."; btn.disabled = true;
+        try {
+            let img = null; if(file) img = await compressImage(file, 300);
+            let data = { name, price, cat }; if(img) data.img = img;
+            if(id) { await dbWrite(db.collection("products").doc(id).update(data)); } 
+            else { await dbWrite(db.collection("products").add(data)); }
+            resetProductForm();
+        } catch(e) { alert(e.message); }
+        btn.innerText = "Save Product"; btn.disabled = false;
     }
     function loadEditForm(dbId) {
         const p = products.find(p => p.dbId === dbId); document.getElementById('edit-prod-id').value = p.dbId; document.getElementById('new-prod-name').value = p.name;
@@ -734,7 +727,7 @@
         document.getElementById('edit-prod-id').value = ''; document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-img').value = '';
         document.getElementById('form-title').innerText = "Add New Product"; document.getElementById('save-prod-btn').innerText = "Save"; document.getElementById('cancel-edit-btn').classList.add('hidden');
     }
-    function deleteProduct(dbId) { if(confirm("Delete product?")) db.collection("products").doc(dbId).delete(); }
+    function deleteProduct(dbId) { if(confirm("Delete product?")) dbWrite(db.collection("products").doc(dbId).delete()).catch(e=>alert(e.message)); }
 
     function renderAdminOrders() {
         const orderList = document.getElementById('admin-order-list'); orderList.innerHTML = orders.length ? '' : '<p>No orders yet.</p>';
@@ -767,8 +760,8 @@
             `;
         });
     }
-    function verifyPayment(dbId, isValid) { db.collection("orders").doc(dbId).update({ payStatus: isValid ? 'Payment Confirmed' : 'Payment Failed', status: isValid ? 'Confirmed' : 'Pending' }); }
-    function changeOrderStatus(dbId, newStatus) { db.collection("orders").doc(dbId).update({ status: newStatus }); }
+    function verifyPayment(dbId, isValid) { dbWrite(db.collection("orders").doc(dbId).update({ payStatus: isValid ? 'Payment Confirmed' : 'Payment Failed', status: isValid ? 'Confirmed' : 'Pending' })).catch(e=>alert(e.message)); }
+    function changeOrderStatus(dbId, newStatus) { dbWrite(db.collection("orders").doc(dbId).update({ status: newStatus })).catch(e=>alert(e.message)); }
 
     function renderSalesReport() {
         let total = 0; orders.forEach(o => { if(o.status !== 'Cancelled' && o.payStatus !== 'Payment Failed') total += o.total; });
