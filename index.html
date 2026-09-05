@@ -4,109 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biju Super Mart</title>
-    <!-- PDF Generation Library for Thermal Receipt -->
+    <!-- PDF Generation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <!-- FIREBASE SDK (V8) -->
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <style>
-        /* Modern UI Variables */
-        :root {
-            --primary-color: #2e7d32;
-            --secondary-color: #fbc02d;
-            --bg-color: #f5f5f5;
-            --text-color: #333;
-            --card-bg: #fff;
-            --danger: #d32f2f;
-            --success: #388e3c;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root { --primary-color: #2e7d32; --primary-dark: #1b5e20; --secondary-color: #fbc02d; --bg-color: #f4f6f8; --text-color: #333; --card-bg: #fff; --danger: #d32f2f; --success: #388e3c; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; }
-        
-        .app-container { width: 100%; max-width: 1200px; background: var(--card-bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 15px rgba(0,0,0,0.1); padding-bottom: 70px; margin: 0 auto; }
-        
+        .app-container { width: 100%; max-width: 1200px; background: var(--card-bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); padding-bottom: 70px; margin: 0 auto; }
         .hidden { display: none !important; }
-        .btn { background: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 8px; font-weight: bold; }
-        .btn-secondary { background: var(--secondary-color); color: #333; }
-        .btn-danger { background: var(--danger); }
-        .btn-small { width: auto; padding: 5px 10px; font-size: 14px; }
-        .input-field { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
         
-        /* Header & Logo */
-        .header { background: var(--primary-color); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;}
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .shop-logo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: white; padding: 2px; }
-        .brand-info h2 { font-size: 1.3rem; margin-bottom: 2px; }
-        .brand-info p { font-size: 0.8rem; opacity: 0.9; }
+        .btn { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 8px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 6px rgba(46,125,50,0.2); text-align: center; text-decoration: none; display: inline-block; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(46,125,50,0.3); }
+        .btn:disabled { background: #999; cursor: not-allowed; transform: none; box-shadow: none;}
+        .btn-secondary { background: var(--secondary-color); color: #333; box-shadow: 0 4px 6px rgba(251,192,45,0.2);}
+        .btn-danger { background: var(--danger); box-shadow: 0 4px 6px rgba(211,47,47,0.2);}
+        .btn-upi { background: linear-gradient(135deg, #5e35b1, #3949ab); color: white; margin-bottom: 15px;}
+        .btn-small { width: auto; padding: 6px 12px; font-size: 13px; }
         
-        /* Search & Categories */
-        .search-bar { padding: 15px; }
-        .categories { display: flex; gap: 10px; padding: 0 15px; overflow-x: auto; scrollbar-width: none; }
-        .cat-badge { background: #eee; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
-        .cat-badge.active { background: var(--secondary-color); font-weight: bold; }
+        .input-field { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; outline: none; transition: 0.3s; }
+        .input-field:focus { border-color: var(--primary-color); background: #fff; box-shadow: 0 0 0 2px rgba(46,125,50,0.1); }
+        
+        .header { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .shop-logo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: white; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .slider-container { position: relative; width: 100%; padding: 15px; overflow: hidden; }
+        .slider-wrapper { display: flex; transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; border-radius: 12px; overflow: visible; }
+        .slide { min-width: 100%; max-width: 100%; border-radius: 12px; overflow: hidden; padding: 0 5px; box-sizing: border-box; }
+        .slide img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .slider-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+        .dot { width: 8px; height: 8px; background: #ccc; border-radius: 50%; cursor: pointer; transition: 0.3s; }
+        .dot.active { background: var(--primary-color); width: 20px; border-radius: 10px; }
+        
+        .categories-container { padding: 5px 15px 15px; }
+        .section-title { font-size: 1.1rem; margin-bottom: 10px; font-weight: bold; color: #444; }
+        .category-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .cat-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-width: 70px; transition: 0.3s; }
+        .cat-item.active { transform: scale(1.05); }
+        .cat-icon { width: 60px; height: 60px; border-radius: 50%; background: #fff; padding: 2px; border: 2px solid transparent; object-fit: cover; box-shadow: 0 3px 8px rgba(0,0,0,0.08); transition: 0.3s; }
+        .cat-item.active .cat-icon { border-color: var(--primary-color); box-shadow: 0 5px 12px rgba(46,125,50,0.3); }
+        .cat-name { font-size: 0.8rem; font-weight: 600; color: #555; text-align: center; }
+        .cat-item.active .cat-name { color: var(--primary-color); }
 
-        /* Responsive Product Grid */
-        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
-        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px; } }
-
-        .product-card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .product-card:hover { transform: scale(1.02); }
-        .product-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
-        .product-card h3 { font-size: 0.95rem; margin: 8px 0 4px; height: 38px; overflow: hidden; }
-        .product-card p { font-weight: bold; color: var(--primary-color); margin-bottom: 8px; }
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 15px 20px; }
+        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+        .product-card { background: white; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.08); border-color: var(--primary-color); }
+        .product-card img { width: 100%; height: 130px; object-fit: contain; margin-bottom: 10px; }
+        .product-card h3 { font-size: 0.95rem; margin: 0 0 5px; line-height: 1.3; height: 38px; overflow: hidden; color: #222; }
+        .product-card p { font-weight: bold; color: var(--primary-color); font-size: 1.1rem; margin-bottom: 10px; }
         
-        /* Sections & Bottom Nav */
+        .share-card { background: linear-gradient(135deg, #f9fff9, #e8f5e9); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid #c8e6c9; margin: 0 15px 20px;}
+        .qr-container { position: relative; display: inline-block; padding: 10px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 15px 0; }
+        .qr-center-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; background: white; object-fit: cover;}
+
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1200px; background: white; display: flex; justify-content: space-around; padding: 10px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; border-top-left-radius: 20px; border-top-right-radius: 20px;}
+        .nav-item { text-align: center; font-size: 0.85rem; color: #888; cursor: pointer; position: relative; padding: 5px 15px; transition: 0.3s; font-weight: 500;}
+        .nav-item.active { color: var(--primary-color); }
+        .nav-item.active span.icon { font-size: 1.2rem; transform: scale(1.1); display: block; margin-bottom: 2px;}
+        .cart-badge { position: absolute; top: -2px; right: 8px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; box-shadow: 0 2px 4px rgba(211,47,47,0.4);}
+        
         .section { padding: 20px; }
         .admin-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .admin-nav button { flex: 1; min-width: 100px; }
-        .order-card { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fafafa; }
-        
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1200px; background: white; display: flex; justify-content: space-around; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; border-top-left-radius: 15px; border-top-right-radius: 15px;}
-        .nav-item { text-align: center; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; padding: 5px 15px;}
-        .nav-item.active { color: var(--primary-color); font-weight: bold; }
-        .cart-badge { position: absolute; top: 0; right: 5px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; }
-
-        /* Report Table */
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .report-table th, .report-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .report-table th { background-color: var(--primary-color); color: white; }
-
-        /* Wait Screen */
-        .wait-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .admin-nav button { flex: 1; min-width: 100px; border-radius: 30px; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-
     <!-- Login Screen -->
     <div id="login-screen" class="section">
         <div style="text-align: center; margin-bottom: 30px; margin-top: 50px;">
-            <img id="login-logo" src="https://via.placeholder.com/100" class="shop-logo" style="width:100px; height:100px; margin-bottom:10px;">
+            <img id="login-logo" src="https://via.placeholder.com/100" class="shop-logo" style="width:100px; height:100px; margin-bottom:15px;">
             <h1 id="login-shop-name" style="color: var(--primary-color);">Biju Super Mart</h1>
-            <p>Login to start shopping</p>
+            <p style="color:#666;">Welcome to your premium store</p>
         </div>
-        <div style="max-width: 400px; margin: 0 auto;">
-            <input type="text" id="cust-name" class="input-field" placeholder="Enter Your Name">
-            <input type="tel" id="cust-phone" class="input-field" placeholder="Enter Mobile Number (10 digits)">
-            <button class="btn" onclick="registerUser()">Login / Register</button>
-            <div style="text-align: center; margin-top: 30px;">
-                <button onclick="showAdminLogin()" style="background:transparent; border:none; color:#666; text-decoration:underline; cursor:pointer;">Admin Access</button>
+        <div style="max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
+            <input type="text" id="cust-name" class="input-field" placeholder="Full Name">
+            <input type="tel" id="cust-phone" class="input-field" placeholder="Mobile Number (10 digits)">
+            <button class="btn" onclick="registerUser()">Start Shopping</button>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="showAdminLogin()" style="background:transparent; border:none; color:#999; text-decoration:underline; cursor:pointer;">Admin Login</button>
             </div>
         </div>
     </div>
 
     <!-- Admin Login -->
     <div id="admin-login-screen" class="hidden section" style="max-width: 400px; margin: 50px auto;">
-        <h2>Admin Portal</h2>
+        <h2 style="text-align:center; color:var(--primary-color);">Admin Portal</h2>
         <input type="password" id="admin-pass" class="input-field" placeholder="Enter Admin Password">
-        <button class="btn" onclick="loginAdmin()">Login</button>
-        <button class="btn btn-secondary" onclick="showScreen('login-screen')">Back</button>
+        <button class="btn" onclick="loginAdmin()">Login Securely</button>
+        <button class="btn btn-secondary" onclick="showScreen('login-screen')">Cancel</button>
     </div>
 
     <!-- Customer Home Screen -->
@@ -119,21 +113,37 @@
                     <p id="display-address">📍 Mangalapur | 🕒 7 AM - 10 PM</p>
                 </div>
             </div>
-            <button onclick="logout()" style="background:transparent; color:white; border:none; font-size: 20px; cursor:pointer;">🚪</button>
+            <button onclick="logout()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:35px; height:35px; cursor:pointer;">🚪</button>
         </div>
         
-        <div class="search-bar">
-            <input type="text" id="search-input" class="input-field" placeholder="🔍 Search for groceries..." onkeyup="filterProducts()" style="margin:0;">
+        <div style="padding: 15px;">
+            <input type="text" id="search-input" class="input-field" placeholder="🔍 Search groceries, snacks, drinks..." onkeyup="filterProducts()" style="margin:0; border-radius: 20px; padding-left: 20px;">
         </div>
 
-        <div class="categories" id="category-list">
-            <div class="cat-badge active" onclick="setCategory('All')">All</div>
-            <div class="cat-badge" onclick="setCategory('Staples')">Staples</div>
-            <div class="cat-badge" onclick="setCategory('Snacks')">Snacks</div>
-            <div class="cat-badge" onclick="setCategory('Drinks')">Drinks</div>
+        <div class="slider-container" id="banner-section" style="display:none;">
+            <div class="slider-wrapper" id="slider-wrapper"></div>
+            <div class="slider-dots" id="slider-dots"></div>
         </div>
 
+        <div class="categories-container">
+            <div class="section-title">Shop by Category</div>
+            <div class="category-scroll" id="category-list"></div>
+        </div>
+
+        <div class="categories-container"><div class="section-title">Featured Products</div></div>
         <div class="product-grid" id="product-list"></div>
+
+        <div id="share-app-section" class="hidden">
+            <div class="share-card">
+                <h3 style="color:var(--primary-dark); margin-bottom: 5px;">Share Our App ❤️</h3>
+                <p style="font-size: 0.9rem; color: #555;">Scan to open our online store directly!</p>
+                <div class="qr-container">
+                    <div id="customer-app-qr"></div>
+                    <img id="qr-center-img" src="" class="qr-center-logo">
+                </div>
+                <button class="btn" onclick="shareAppUrl()" style="border-radius: 25px;">🔗 Share App Link</button>
+            </div>
+        </div>
     </div>
 
     <!-- Customer My Orders Screen -->
@@ -148,7 +158,7 @@
         <div id="cart-items" style="margin: 20px 0;"></div>
         <h3 id="cart-total" style="margin-bottom: 20px; color: var(--primary-color);">Total: ₹0</h3>
         
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 500px;">
+        <div style="background: #fff; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <h3>Delivery Details</h3>
             <input type="text" id="del-address" class="input-field" placeholder="House No, Street, Landmark">
             <input type="number" id="del-pin" class="input-field" placeholder="PIN Code (Only 752104)">
@@ -160,101 +170,135 @@
                 <label><input type="radio" name="pay-mode" value="ONLINE" onchange="togglePayMode()"> Online (UPI)</label>
             </div>
 
-            <!-- Online Payment Section -->
-            <div id="online-pay-section" class="hidden" style="margin-top: 15px; text-align: center; padding: 10px; border: 1px dashed #ccc;">
-                <p style="font-size:0.9rem; margin-bottom:10px;">Scan QR to Pay: <b>₹<span id="pay-amt">0</span></b></p>
-                <img id="cust-qr-code" src="" style="width: 150px; height: 150px; object-fit: cover; margin-bottom: 10px; display: none;">
-                <p id="no-qr-msg" style="color:var(--danger); font-size:0.8rem; display:none;">QR Not Available. Select COD.</p>
+            <!-- Dynamic UPI Online Payment Section -->
+            <div id="online-pay-section" class="hidden" style="margin-top: 15px; text-align: center; padding: 15px; border: 2px dashed var(--primary-color); border-radius: 10px; background:#f9fff9;">
+                <p style="font-size:0.9rem; margin-bottom:10px;">Scan QR or Click to Pay: <b style="font-size:1.2rem; color:var(--primary-color);">₹<span id="pay-amt">0</span></b></p>
+                
+                <div class="qr-container" style="margin: 5px auto 15px;">
+                    <div id="cust-dynamic-qr"></div>
+                </div>
+
+                <!-- Deep Link Button for PhonePe/GPay -->
+                <a id="upi-intent-btn" href="#" class="btn btn-upi" style="display:none;">🚀 Pay via PhonePe / GPay</a>
+
+                <p id="no-qr-msg" style="color:var(--danger); font-size:0.8rem; display:none;">Admin UPI ID Not Setup. Select COD.</p>
+                
+                <p style="font-size:0.85rem; color:#555; margin-bottom:5px;">After payment, enter UTR below:</p>
                 <input type="text" id="utr-input" class="input-field" placeholder="Enter 12-digit UTR/Ref Number">
             </div>
 
-            <button class="btn" id="place-order-btn" onclick="placeOrder()">Place Order (COD)</button>
+            <button class="btn" id="place-order-btn" onclick="placeOrder()" style="margin-top: 20px; border-radius: 25px;">Place Order (COD)</button>
         </div>
     </div>
 
-    <!-- Payment Waiting Screen -->
-    <div id="payment-wait-screen" class="hidden section wait-screen">
-        <div class="loader"></div>
+    <!-- Wait Screen -->
+    <div id="payment-wait-screen" class="hidden section" style="height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <div style="border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
         <h2 style="color: var(--primary-color);">Verifying Payment...</h2>
-        <p style="margin-top: 10px; color: #666;">Please wait while the admin confirms your payment.</p>
-        <p style="font-size:0.8rem; margin-top:5px;">Do not press back or refresh.</p>
+        <p style="margin-top: 10px; color: #666;">Admin is verifying your transaction.</p>
+        <p style="font-size:0.8rem; margin-top:5px;">Please wait here.</p>
     </div>
 
     <!-- Bottom Navigation -->
     <div id="customer-bottom-nav" class="bottom-nav hidden">
-        <div class="nav-item active" onclick="navTo('customer-home')">🏠<br>Home</div>
-        <div class="nav-item" onclick="navTo('customer-orders-screen')">📦<br>Orders</div>
-        <div class="nav-item" onclick="navTo('cart-screen'); showCart();">🛒<br>Cart <span class="cart-badge" id="cart-count">0</span></div>
+        <div class="nav-item active" onclick="navTo('customer-home')"><span class="icon">🏠</span>Home</div>
+        <div class="nav-item" onclick="navTo('customer-orders-screen')"><span class="icon">📦</span>Orders</div>
+        <div class="nav-item" onclick="navTo('cart-screen'); showCart();"><span class="icon">🛒</span>Cart <span class="cart-badge" id="cart-count">0</span></div>
     </div>
 
     <!-- Admin Dashboard -->
     <div id="admin-dashboard" class="hidden section" style="padding-bottom: 20px;">
         <div class="header" style="margin: -20px -20px 20px -20px; border-radius:0;">
             <h2>Admin Dashboard</h2>
-            <button onclick="logoutAdmin()" style="background:transparent; color:white; border:none; cursor:pointer;">Logout</button>
+            <button onclick="logoutAdmin()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:5px 15px; border-radius:15px; cursor:pointer;">Logout</button>
         </div>
         
         <div class="admin-nav">
             <button class="btn btn-secondary" onclick="toggleAdminTab('orders')">Orders</button>
-            <button class="btn btn-secondary" onclick="toggleAdminTab('products')">Inventory</button>
-            <button class="btn btn-secondary" onclick="toggleAdminTab('reports')">Sales Report</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('products')">Products</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('categories')">Categories</button>
+            <button class="btn btn-secondary" onclick="toggleAdminTab('banners')">Banners</button>
             <button class="btn btn-secondary" onclick="toggleAdminTab('settings')">Settings</button>
         </div>
 
-        <!-- Admin: Orders -->
         <div id="admin-orders">
-            <h3>Recent Orders</h3>
+            <h3>Manage Orders</h3>
             <div id="admin-order-list" style="margin-top: 15px; max-width: 600px;"></div>
         </div>
 
-        <!-- Admin: Products -->
+        <div id="admin-categories" class="hidden">
+            <div style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <h3 id="cat-form-title">Add New Category</h3>
+                <input type="hidden" id="edit-cat-id">
+                <input type="text" id="new-cat-name" class="input-field" placeholder="Category Name (e.g. Snacks)">
+                <label style="font-weight:bold; margin-top:10px; display:block; font-size: 0.9rem;">Category Image Icon</label>
+                <input type="file" id="new-cat-img" class="input-field" accept="image/*">
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" id="save-cat-btn" onclick="saveCategory()">Save Category</button>
+                    <button class="btn btn-secondary hidden" id="cancel-cat-btn" onclick="resetCatForm()">Cancel</button>
+                </div>
+            </div>
+            <h3>Current Categories</h3>
+            <div id="admin-category-list" style="margin-top: 10px; max-width: 600px;"></div>
+        </div>
+
         <div id="admin-products" class="hidden">
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; max-width: 500px;">
+            <div style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                 <h3 id="form-title">Add New Product</h3>
                 <input type="hidden" id="edit-prod-id">
                 <input type="text" id="new-prod-name" class="input-field" placeholder="Product Name">
                 <input type="number" id="new-prod-price" class="input-field" placeholder="Price (₹)">
-                <select id="new-prod-cat" class="input-field">
-                    <option value="Staples">Staples</option>
-                    <option value="Snacks">Snacks</option>
-                    <option value="Drinks">Drinks</option>
-                </select>
-                <input type="text" id="new-prod-img" class="input-field" placeholder="Image URL (Leave blank for default)">
-                <button class="btn" id="save-prod-btn" onclick="saveProduct()">Add Product</button>
-                <button class="btn btn-secondary hidden" id="cancel-edit-btn" onclick="resetProductForm()">Cancel Edit</button>
+                <select id="new-prod-cat" class="input-field"><option value="">Select Category</option></select>
+                <label style="font-weight:bold; margin-top:10px; display:block; font-size: 0.9rem;">Product Image</label>
+                <input type="file" id="new-prod-img" class="input-field" accept="image/*">
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" id="save-prod-btn" onclick="saveProduct()">Save Product</button>
+                    <button class="btn btn-secondary hidden" id="cancel-edit-btn" onclick="resetProductForm()">Cancel</button>
+                </div>
             </div>
-            <h3>Current Inventory</h3>
+            <h3>Inventory</h3>
             <div id="admin-inventory-list" style="margin-top: 10px; max-width: 600px;"></div>
         </div>
 
-        <!-- Admin: Sales Report -->
-        <div id="admin-reports" class="hidden">
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 600px;">
-                <h3>Total Sales Revenue: <span style="color:var(--primary-color);">₹<span id="total-revenue-amt">0</span></span></h3>
-                <h4 style="margin-top: 20px;">Item-wise Sale Report</h4>
-                <table class="report-table">
-                    <thead><tr><th>Product Name</th><th>Qty Sold</th></tr></thead>
-                    <tbody id="item-sales-tbody"></tbody>
-                </table>
+        <div id="admin-banners" class="hidden">
+            <div style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <h3>Upload Promo Banners (Max 5)</h3>
+                <input type="file" id="banner-upload-input" class="input-field" accept="image/*" multiple>
+                <button class="btn" onclick="uploadBanners()">Upload Banners</button>
             </div>
+            <h3>Current Banners</h3>
+            <div id="admin-banner-list" style="margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px;"></div>
         </div>
 
-        <!-- Admin: Settings -->
         <div id="admin-settings" class="hidden">
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; max-width: 500px;">
-                <h3>Shop Details & Logo</h3>
-                <input type="text" id="set-shop-name" class="input-field" placeholder="Shop Name (E.g. Biju Super Mart)">
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--primary-color);">
+                <h3 style="color:var(--primary-dark);">App Link & QR Code</h3>
+                <p style="font-size: 0.8rem; color: gray;">Paste your website link here to generate a scanable QR code for customers.</p>
+                <input type="url" id="set-app-url" class="input-field" placeholder="E.g. https://bijusupermart.web.app">
+                <div class="qr-container" style="display:none;" id="admin-qr-container">
+                    <div id="admin-app-qr"></div>
+                </div>
+                <button class="btn" onclick="saveAppUrl()" style="margin-top: 10px;">Save Link & Generate QR</button>
+            </div>
+
+            <div style="background: #fff; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <h3>Shop Identity</h3>
+                <input type="text" id="set-shop-name" class="input-field" placeholder="Shop Name">
                 <input type="text" id="set-address" class="input-field" placeholder="Address & Timing">
+                <label style="margin-top: 15px; display:block; font-weight:bold; font-size: 0.9rem;">Upload Shop Logo</label>
+                <input type="file" id="set-logo-file" class="input-field" accept="image/*">
                 
-                <label style="margin-top: 10px; display:block; font-weight:bold;">Upload Shop Logo (URL)</label>
-                <input type="text" id="set-logo-file" class="input-field" placeholder="Paste Logo Image URL here">
+                <!-- CHANGED TO TEXT INPUT FOR UPI ID -->
+                <h3 style="margin-top: 25px;">Payment Integration (Auto QR/PhonePe)</h3>
+                <label style="display:block; font-weight:bold; font-size: 0.9rem;">Enter Admin UPI ID (PhonePe/GPay)</label>
+                <input type="text" id="set-upi-id" class="input-field" placeholder="e.g. 9876543210@ybl or name@okicici">
                 
-                <h3 style="margin-top: 20px;">Payment QR Code (For Online Pay)</h3>
-                <label style="display:block; font-weight:bold;">Upload UPI QR Image (URL)</label>
-                <input type="text" id="set-qr-file" class="input-field" placeholder="Paste QR Image URL here">
-                <img id="admin-qr-preview" src="" style="width: 100px; display: none; margin-top: 10px;">
-                
-                <button class="btn" onclick="saveSettings()" style="margin-top: 15px;">Save Settings</button>
+                <button class="btn" onclick="saveSettings()" style="margin-top: 20px;">Save Shop Details</button>
+            </div>
+            
+            <div style="background: #fff; padding: 20px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 20px;">
+                <h3>Total Sales Revenue: <span style="color:var(--primary-color);">₹<span id="total-revenue-amt">0</span></span></h3>
+                <button class="btn btn-secondary" onclick="renderSalesReport()">Refresh Report Data</button>
             </div>
         </div>
     </div>
@@ -267,13 +311,11 @@
         <h2 id="tr-shop-name" style="text-align: center; margin-bottom: 5px; font-size: 18px;">Shop Name</h2>
         <p id="tr-address" style="text-align: center; font-size: 12px; margin-bottom: 10px;">Address</p>
         <div style="border-bottom: 1px dashed black; margin-bottom: 10px;"></div>
-        <p><strong>Order ID:</strong> <span id="tr-order-id"></span></p>
-        <p><strong>Date:</strong> <span id="tr-date"></span></p>
+        <p><strong>Order:</strong> <span id="tr-order-id"></span></p>
         <p><strong>Customer:</strong> <span id="tr-customer"></span></p>
         <p><strong>Pay Mode:</strong> <span id="tr-paymode"></span></p>
         <div style="border-bottom: 1px dashed black; margin: 10px 0;"></div>
         <table style="width: 100%; text-align: left; font-size: 14px;">
-            <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right;">Amt</th></tr></thead>
             <tbody id="tr-items"></tbody>
         </table>
         <div style="border-bottom: 1px dashed black; margin: 10px 0;"></div>
@@ -284,84 +326,87 @@
 
 <script>
     // ==========================================
-    // 1. FIREBASE CONFIGURATION YAHAN DALEIN
+    // 1. APNA FIREBASE CONFIGURATION YAHAN DALEIN
     // ==========================================
     const firebaseConfig = {
-        apiKey: "AIzaSyA7-fLETBmZiw39_nwTBi1v4GmPGYNB_m0",
-  authDomain: "biju-mart.firebaseapp.com",
-  databaseURL: "https://biju-mart-default-rtdb.firebaseio.com",
-  projectId: "biju-mart",
-  storageBucket: "biju-mart.firebasestorage.app",
-  messagingSenderId: "897539763161",
-  appId: "1:897539763161:web:f07951d66e62363b85c7c8",
-  measurementId: "G-LLP0JGN29Y"
+        apiKey: "AIzaSyAphaeRh9xCSEuax39qVIT-RsICpjRcxLI",
+  authDomain: "biju-super-mart-new-446c1.firebaseapp.com",
+  projectId: "biju-super-mart-new-446c1",
+  storageBucket: "biju-super-mart-new-446c1.firebasestorage.app",
+  messagingSenderId: "665014596861",
+  appId: "1:665014596861:web:240a253195890e2343ba94",
+  measurementId: "G-7ECX2JVJFC"
     };
 
-    // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.firestore();
     
-    // ==========================================
-    // State Management
-    // ==========================================
     let currentUser = JSON.parse(localStorage.getItem('biju_user')) || null;
     let cart = JSON.parse(localStorage.getItem('biju_cart')) || [];
+    let currentWaitOrderId = localStorage.getItem('wait_order_id') || null;
     let currentCategory = 'All';
-    let products = [];
-    let orders = [];
-    let shopSettings = { name: "Biju Super Mart", address: "📍 Mangalapur", logo: "https://via.placeholder.com/100", qrCode: "" };
-    let currentWaitOrderId = null;
+    let products = [], categories = [], orders = [];
+    
+    // upiId added to settings state
+    let shopSettings = { name: "Biju Super Mart", address: "📍 Mangalapur", logo: "", upiId: "", banners: [], appUrl: "" };
+    
+    let sliderInterval;
+    let adminQRInstance = null;
+    let custQRInstance = null;
+
+    function compressImage(file, maxWidth) {
+        return new Promise((resolve) => {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let newWidth = img.width; let newHeight = img.height;
+                    if (newWidth > maxWidth) { newHeight = (maxWidth / newWidth) * newHeight; newWidth = maxWidth; }
+                    canvas.width = newWidth; canvas.height = newHeight;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                    resolve(canvas.toDataURL('image/jpeg', 0.5));
+                }
+            }
+        });
+    }
 
     // ==========================================
-    // Realtime Listeners (Firebase)
+    // Firebase Listeners
     // ==========================================
     window.onload = () => {
         setupRealtimeListeners();
-        if (currentUser) { navTo('customer-home'); updateCartCount(); } 
-        else { showScreen('login-screen'); }
+        if (currentUser) {
+            if(currentWaitOrderId) { navTo('payment-wait-screen'); } else { navTo('customer-home'); }
+            updateCartCount();
+        } else { showScreen('login-screen'); }
     };
 
     function setupRealtimeListeners() {
-        // Settings Listener
         db.collection("settings").doc("shopDetails").onSnapshot((doc) => {
-            if(doc.exists) {
-                shopSettings = doc.data();
-                applySettings();
-            }
+            if(doc.exists) { shopSettings = { banners: [], appUrl: "", upiId: "", ...doc.data() }; applySettings(); initSlider(); renderAdminBanners(); generateAppQRs(); }
         });
-
-        // Products Listener
+        db.collection("categories").onSnapshot((snapshot) => {
+            categories = []; snapshot.forEach(doc => categories.push({ dbId: doc.id, ...doc.data() }));
+            renderCategoriesUI(); if(!document.getElementById('admin-categories').classList.contains('hidden')) renderAdminCategories();
+        });
         db.collection("products").onSnapshot((snapshot) => {
-            products = [];
-            snapshot.forEach(doc => products.push({ dbId: doc.id, ...doc.data() }));
-            if(!document.getElementById('customer-home').classList.contains('hidden')) filterProducts();
+            products = []; snapshot.forEach(doc => products.push({ dbId: doc.id, ...doc.data() }));
+            cleanCartInvalidItems(); if(!document.getElementById('customer-home').classList.contains('hidden')) filterProducts();
             if(!document.getElementById('admin-products').classList.contains('hidden')) renderAdminInventory();
         });
-
-        // Orders Listener
         db.collection("orders").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
-            orders = [];
-            snapshot.forEach(doc => orders.push({ dbId: doc.id, ...doc.data() }));
-            
-            // Re-render active screens
+            orders = []; snapshot.forEach(doc => orders.push({ dbId: doc.id, ...doc.data() }));
             if(!document.getElementById('customer-orders-screen').classList.contains('hidden')) renderMyOrders();
             if(!document.getElementById('admin-orders').classList.contains('hidden')) renderAdminOrders();
-            if(!document.getElementById('admin-reports').classList.contains('hidden')) renderSalesReport();
             
-            // Check Wait Screen Status
             if(currentWaitOrderId) {
                 let waitOrder = orders.find(o => o.orderId === currentWaitOrderId);
                 if(waitOrder) {
-                    if(waitOrder.payStatus === 'Payment Confirmed') {
-                        currentWaitOrderId = null;
-                        alert("Payment Successful! Order Confirmed.");
-                        navTo('customer-orders-screen');
-                    } else if (waitOrder.payStatus === 'Payment Failed') {
-                        currentWaitOrderId = null;
-                        alert("Payment Verification Failed by Admin.");
-                        navTo('customer-orders-screen');
+                    if(waitOrder.payStatus === 'Payment Confirmed') { 
+                        currentWaitOrderId = null; localStorage.removeItem('wait_order_id'); alert("Payment Successful!"); navTo('customer-orders-screen'); 
+                    } else if (waitOrder.payStatus === 'Payment Failed') { 
+                        currentWaitOrderId = null; localStorage.removeItem('wait_order_id'); alert("Payment Failed by Admin."); navTo('customer-orders-screen'); 
                     }
                 }
             }
@@ -371,390 +416,385 @@
     function applySettings() {
         document.getElementById('display-shop-name').innerText = shopSettings.name;
         document.getElementById('display-address').innerText = shopSettings.address;
-        document.getElementById('display-logo').src = shopSettings.logo;
         document.getElementById('login-shop-name').innerText = shopSettings.name;
-        document.getElementById('login-logo').src = shopSettings.logo;
         document.getElementById('set-shop-name').value = shopSettings.name;
         document.getElementById('set-address').value = shopSettings.address;
-        document.getElementById('set-logo-file').value = shopSettings.logo;
-        document.getElementById('set-qr-file').value = shopSettings.qrCode;
+        document.getElementById('set-app-url').value = shopSettings.appUrl;
+        document.getElementById('set-upi-id').value = shopSettings.upiId; // Admin Form Input
         
-        if(shopSettings.qrCode) {
-            document.getElementById('admin-qr-preview').src = shopSettings.qrCode;
-            document.getElementById('admin-qr-preview').style.display = 'block';
-            document.getElementById('cust-qr-code').src = shopSettings.qrCode;
+        if (shopSettings.logo) {
+            document.getElementById('display-logo').src = shopSettings.logo;
+            document.getElementById('login-logo').src = shopSettings.logo;
+            document.getElementById('qr-center-img').src = shopSettings.logo;
         }
     }
 
-    // ==========================================
-    // Navigation
-    // ==========================================
-    function showScreen(screenId) {
-        document.querySelectorAll('.app-container > div.section, #customer-home').forEach(div => div.classList.add('hidden'));
-        document.getElementById(screenId).classList.remove('hidden');
+    function generateAppQRs() {
+        const custShareSec = document.getElementById('share-app-section'); const adminQrCont = document.getElementById('admin-qr-container');
+        if(shopSettings.appUrl) {
+            if(!adminQRInstance) { adminQRInstance = new QRCode(document.getElementById('admin-app-qr'), { text: shopSettings.appUrl, width: 150, height: 150, colorDark: "#1b5e20", correctLevel: QRCode.CorrectLevel.H });
+            } else { adminQRInstance.clear(); adminQRInstance.makeCode(shopSettings.appUrl); }
+            if(!custQRInstance) { custQRInstance = new QRCode(document.getElementById('customer-app-qr'), { text: shopSettings.appUrl, width: 180, height: 180, colorDark: "#1b5e20", correctLevel: QRCode.CorrectLevel.H });
+            } else { custQRInstance.clear(); custQRInstance.makeCode(shopSettings.appUrl); }
+            adminQrCont.style.display = "inline-block"; custShareSec.classList.remove('hidden');
+        } else { custShareSec.classList.add('hidden'); adminQrCont.style.display = "none"; }
     }
 
+    function saveAppUrl() {
+        const url = document.getElementById('set-app-url').value.trim();
+        db.collection("settings").doc("shopDetails").set({ appUrl: url }, { merge: true }).then(() => alert("App Link Saved & QR Updated!")).catch(e => alert("Error: " + e.message));
+    }
+
+    function shareAppUrl() {
+        if (navigator.share && shopSettings.appUrl) { navigator.share({ title: shopSettings.name, text: `Order Groceries Online from ${shopSettings.name}! Click to open app:`, url: shopSettings.appUrl }).catch(console.error);
+        } else if(shopSettings.appUrl) { alert("Copy this link to share: \n" + shopSettings.appUrl);
+        } else { alert("Admin hasn't set an app link yet."); }
+    }
+
+    function initSlider() {
+        const wrapper = document.getElementById('slider-wrapper'); const dotsBox = document.getElementById('slider-dots'); const section = document.getElementById('banner-section');
+        if(!shopSettings.banners || shopSettings.banners.length === 0) { section.style.display = 'none'; return; }
+        section.style.display = 'block'; wrapper.innerHTML = ''; dotsBox.innerHTML = '';
+        shopSettings.banners.forEach((b64, index) => { wrapper.innerHTML += `<div class="slide"><img src="${b64}"></div>`; dotsBox.innerHTML += `<div class="dot ${index===0?'active':''}"></div>`; });
+        clearInterval(sliderInterval); let currSlide = 0;
+        sliderInterval = setInterval(() => {
+            currSlide = (currSlide + 1) % shopSettings.banners.length; wrapper.style.transform = `translateX(-${currSlide * 100}%)`;
+            const dots = dotsBox.querySelectorAll('.dot'); dots.forEach((d, i) => d.classList.toggle('active', i === currSlide));
+        }, 3000);
+    }
+
+    function showScreen(screenId) { document.querySelectorAll('.app-container > div.section, #customer-home').forEach(div => div.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
     function navTo(screenId) {
         showScreen(screenId);
-        if(screenId !== 'login-screen' && screenId !== 'admin-login-screen' && screenId !== 'admin-dashboard' && screenId !== 'payment-wait-screen') {
-            document.getElementById('customer-bottom-nav').classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        if(!['login-screen', 'admin-login-screen', 'admin-dashboard', 'payment-wait-screen'].includes(screenId)) {
+            document.getElementById('customer-bottom-nav').classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             if(screenId === 'customer-home') { document.querySelectorAll('.nav-item')[0].classList.add('active'); filterProducts(); }
-            if(screenId === 'customer-orders-screen') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderMyOrders(); }
+            if(screenId === 'customer-orders-screen') document.querySelectorAll('.nav-item')[1].classList.add('active');
             if(screenId === 'cart-screen') document.querySelectorAll('.nav-item')[2].classList.add('active');
-        } else {
-            document.getElementById('customer-bottom-nav').classList.add('hidden');
-        }
+        } else { document.getElementById('customer-bottom-nav').classList.add('hidden'); }
     }
 
-    // ==========================================
-    // Customer Auth & Cart
-    // ==========================================
     function registerUser() {
-        const name = document.getElementById('cust-name').value.trim();
-        const phone = document.getElementById('cust-phone').value.trim();
-        if (name && phone.length >= 10) {
-            currentUser = { name, phone };
-            localStorage.setItem('biju_user', JSON.stringify(currentUser)); 
-            navTo('customer-home');
-        } else { alert("Please enter valid Name and Mobile Number"); }
+        const name = document.getElementById('cust-name').value.trim(); const phone = document.getElementById('cust-phone').value.trim();
+        if (name && phone.length >= 10) { currentUser = { name, phone }; localStorage.setItem('biju_user', JSON.stringify(currentUser)); navTo('customer-home'); } 
+        else { alert("Valid Name & 10-digit Phone required."); }
     }
     function logout() { localStorage.removeItem('biju_user'); currentUser = null; navTo('login-screen'); }
 
-    function setCategory(cat) {
-        currentCategory = cat;
-        document.querySelectorAll('.cat-badge').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active'); filterProducts();
+    function renderCategoriesUI() {
+        const list = document.getElementById('category-list'); const adminSelect = document.getElementById('new-prod-cat');
+        list.innerHTML = `<div class="cat-item ${currentCategory === 'All' ? 'active' : ''}" onclick="setCategory('All')"><img src="https://via.placeholder.com/80/2e7d32/ffffff?text=ALL" class="cat-icon"><span class="cat-name">All Items</span></div>`;
+        adminSelect.innerHTML = '<option value="">Select Category</option>';
+        categories.forEach(c => {
+            list.innerHTML += `<div class="cat-item ${currentCategory === c.name ? 'active' : ''}" onclick="setCategory('${c.name}')"><img src="${c.image || 'https://via.placeholder.com/80'}" class="cat-icon"><span class="cat-name">${c.name}</span></div>`;
+            adminSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+        });
     }
+    function setCategory(cat) { currentCategory = cat; renderCategoriesUI(); filterProducts(); }
+
     function filterProducts() {
-        const grid = document.getElementById('product-list');
-        const searchTerm = document.getElementById('search-input').value.toLowerCase();
-        grid.innerHTML = '';
-        let filtered = products.filter(p => (currentCategory === 'All' || p.cat === currentCategory) && p.name.toLowerCase().includes(searchTerm));
-        if(!filtered.length) { grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">No products found.</p>'; return; }
+        const grid = document.getElementById('product-list'); const term = document.getElementById('search-input').value.toLowerCase(); grid.innerHTML = '';
+        let filtered = products.filter(p => (currentCategory === 'All' || p.cat === currentCategory) && p.name.toLowerCase().includes(term));
+        if(!filtered.length) { grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No products found.</p>'; return; }
         filtered.forEach(p => {
             grid.innerHTML += `
                 <div class="product-card">
-                    <img src="${p.img}" alt="${p.name}">
-                    <h3>${p.name}</h3>
-                    <p>₹${p.price}</p>
-                    <button class="btn" style="padding: 6px;" onclick="addToCart('${p.dbId}')">Add to Cart</button>
+                    <img src="${p.img || 'https://via.placeholder.com/150'}" alt="${p.name}">
+                    <h3>${p.name}</h3><p>₹${p.price}</p>
+                    <button class="btn" style="padding: 8px; border-radius: 20px;" onclick="addToCart('${p.dbId}')">Add to Cart</button>
                 </div>
             `;
         });
     }
 
+    function cleanCartInvalidItems() {
+        if(products.length === 0) return; const validIds = products.map(p => p.dbId);
+        cart = cart.filter(item => validIds.includes(item.dbId)); saveCart();
+    }
     function addToCart(dbId) {
-        const product = products.find(p => p.dbId === dbId);
-        const item = cart.find(i => i.dbId === dbId);
-        item ? item.qty += 1 : cart.push({ ...product, qty: 1 });
-        saveCart();
+        const product = products.find(p => p.dbId === dbId); if(!product) return;
+        const item = cart.find(i => i.dbId === dbId); item ? item.qty += 1 : cart.push({ ...product, qty: 1 }); saveCart();
     }
     function updateQty(dbId, change) {
         const item = cart.find(i => i.dbId === dbId);
         if(item) { item.qty += change; if(item.qty <= 0) cart = cart.filter(i => i.dbId !== dbId); saveCart(); showCart(); }
     }
-    function saveCart() { localStorage.setItem('biju_cart', JSON.stringify(cart)); updateCartCount(); }
+    function saveCart() { localStorage.setItem('biju_cart', JSON.stringify(cart)); document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + i.qty, 0); }
     function updateCartCount() { document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + i.qty, 0); }
 
     function showCart() {
-        const cartDiv = document.getElementById('cart-items');
-        let total = 0; cartDiv.innerHTML = '';
+        const cartDiv = document.getElementById('cart-items'); let total = 0; cartDiv.innerHTML = '';
         if(!cart.length) { cartDiv.innerHTML = '<p>Your cart is empty.</p>'; document.getElementById('cart-total').innerText = `Total: ₹0`; return; }
-
         cart.forEach(item => {
             total += item.price * item.qty;
             cartDiv.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:10px 0;">
-                    <div><strong>${item.name}</strong><br><small>₹${item.price} x ${item.qty}</small></div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button style="width:25px;height:25px;border:none;background:#ddd;" onclick="updateQty('${item.dbId}', -1)">-</button>
-                        <span>${item.qty}</span>
-                        <button style="width:25px;height:25px;border:none;background:#ddd;" onclick="updateQty('${item.dbId}', 1)">+</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:15px 0;">
+                    <div><strong style="color:#222;">${item.name}</strong><br><small style="color:var(--primary-color); font-weight:bold;">₹${item.price} x ${item.qty}</small></div>
+                    <div style="display:flex; gap:12px; align-items:center; background:#f5f5f5; border-radius:20px; padding:5px;">
+                        <button style="width:28px;height:28px;border:none;background:white;border-radius:50%;cursor:pointer;" onclick="updateQty('${item.dbId}', -1)">-</button>
+                        <span style="font-weight:bold; min-width:15px; text-align:center;">${item.qty}</span>
+                        <button style="width:28px;height:28px;border:none;background:var(--primary-color);color:white;border-radius:50%;cursor:pointer;" onclick="updateQty('${item.dbId}', 1)">+</button>
                     </div>
                 </div>
             `;
         });
-        document.getElementById('cart-total').innerText = `Total: ₹${total}`;
-        document.getElementById('pay-amt').innerText = total;
+        document.getElementById('cart-total').innerText = `Total: ₹${total}`; document.getElementById('pay-amt').innerText = total;
     }
 
+    // ==========================================
+    // Dynamic UPI Payment Logic
+    // ==========================================
     function togglePayMode() {
         const mode = document.querySelector('input[name="pay-mode"]:checked').value;
-        const onlineSec = document.getElementById('online-pay-section');
+        const onlineSec = document.getElementById('online-pay-section'); 
         const btn = document.getElementById('place-order-btn');
+        const intentBtn = document.getElementById('upi-intent-btn');
+        const dynamicQrBox = document.getElementById('cust-dynamic-qr');
+        
         if(mode === 'ONLINE') {
             onlineSec.classList.remove('hidden');
-            if(shopSettings.qrCode) {
-                document.getElementById('cust-qr-code').style.display = 'inline-block';
+            
+            if(shopSettings.upiId) {
+                // Calculate dynamic total
+                const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                
+                // Construct standard UPI deep link string
+                // format: upi://pay?pa=UPIID&pn=Name&am=Amount&cu=INR
+                const upiLink = `upi://pay?pa=${shopSettings.upiId}&pn=${encodeURIComponent(shopSettings.name)}&am=${total}&cu=INR`;
+                
+                // Clear old dynamic QR and create new one with correct amount
+                dynamicQrBox.innerHTML = '';
+                new QRCode(dynamicQrBox, { text: upiLink, width: 150, height: 150, colorDark: "#1b5e20", correctLevel: QRCode.CorrectLevel.H });
+                
+                // Set the link for the PhonePe/GPay Button
+                intentBtn.href = upiLink;
+                intentBtn.style.display = 'inline-block';
+                
                 document.getElementById('no-qr-msg').style.display = 'none';
-                btn.innerText = 'Verify UTR & Place Order';
+                btn.innerText = 'Verify UTR & Place Order'; btn.disabled = false;
             } else {
-                document.getElementById('cust-qr-code').style.display = 'none';
+                dynamicQrBox.innerHTML = '';
+                intentBtn.style.display = 'none';
+                document.getElementById('no-qr-msg').innerText = "Admin has not set UPI ID in settings.";
                 document.getElementById('no-qr-msg').style.display = 'block';
-                btn.innerText = 'QR Not Setup (Use COD)';
+                btn.innerText = 'UPI Not Setup (Use COD)'; btn.disabled = true; 
             }
-        } else {
-            onlineSec.classList.add('hidden');
-            btn.innerText = 'Place Order (COD)';
+        } else { 
+            onlineSec.classList.add('hidden'); btn.innerText = 'Place Order (COD)'; btn.disabled = false; 
         }
     }
 
-    // Place Order to Firestore
     function placeOrder() {
-        const address = document.getElementById('del-address').value.trim();
-        const pin = document.getElementById('del-pin').value;
+        const address = document.getElementById('del-address').value.trim(); const pin = document.getElementById('del-pin').value.trim();
         const pinError = document.getElementById('pin-error');
+        
         if (pin !== "752104") { pinError.classList.remove('hidden'); return; }
         pinError.classList.add('hidden');
-        if(!cart.length) return alert("Cart is empty");
-        if(!address) return alert("Please enter delivery address");
+        if(!cart.length) return alert("Cart is empty"); if(!address) return alert("Please enter delivery address");
 
-        const payMode = document.querySelector('input[name="pay-mode"]:checked').value;
-        let utr = "";
+        const payMode = document.querySelector('input[name="pay-mode"]:checked').value; let utr = "";
+        
         if(payMode === 'ONLINE') {
-            if(!shopSettings.qrCode) return alert("Online payment currently unavailable. Choose COD.");
             utr = document.getElementById('utr-input').value.trim();
-            if(!utr || utr.length < 8) return alert("Please enter valid UTR/Reference number.");
+            if(!utr || utr.length < 8) return alert("Please enter valid UTR Number (Min 8 digits).");
         }
 
         const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         const orderId = 'ORD' + Math.floor(Math.random() * 100000);
-        
-        const newOrder = {
-            orderId: orderId,
-            customer: currentUser, address: address, items: cart, total: total,
-            status: 'Pending', date: new Date().toLocaleString(),
-            payMode: payMode, utr: utr, payStatus: payMode === 'ONLINE' ? 'Pending Verification' : 'COD',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
+        const newOrder = { orderId: orderId, customer: currentUser, address: address, items: cart, total: total, status: 'Pending', date: new Date().toLocaleString(), payMode: payMode, utr: utr, payStatus: payMode === 'ONLINE' ? 'Pending Verification' : 'COD', timestamp: Date.now() };
+
+        const btn = document.getElementById('place-order-btn'); const originalText = btn.innerText;
+        btn.innerText = "Processing..."; btn.disabled = true;
 
         db.collection("orders").add(newOrder).then(() => {
+            btn.innerText = originalText; btn.disabled = false;
             cart = []; saveCart();
-            if(payMode === 'ONLINE') {
-                currentWaitOrderId = orderId;
-                navTo('payment-wait-screen');
-            } else {
-                alert("Order Placed Successfully!");
-                navTo('customer-orders-screen');
-            }
-        }).catch(err => alert("Error placing order: " + err));
+            if(payMode === 'ONLINE') { 
+                currentWaitOrderId = orderId; localStorage.setItem('wait_order_id', orderId); navTo('payment-wait-screen'); 
+            } else { alert("Order Placed Successfully!"); navTo('customer-orders-screen'); }
+        }).catch((error) => {
+            btn.innerText = originalText; btn.disabled = false;
+            alert("Order place failed: " + error.message + "\n\n(DHYAN DEIN: Firebase Database ke 'Rules' ko update karein!)");
+        });
     }
 
     function renderMyOrders() {
-        const list = document.getElementById('my-orders-list');
-        const myOrders = orders.filter(o => o.customer.phone === currentUser.phone);
-        list.innerHTML = myOrders.length ? '' : '<p>You have no orders yet.</p>';
+        const list = document.getElementById('my-orders-list'); const myOrders = orders.filter(o => o.customer.phone === currentUser.phone);
+        list.innerHTML = myOrders.length ? '' : '<p>No orders yet.</p>';
         myOrders.forEach(ord => {
             let badge = ord.status === 'Pending' ? '#ffe0b2' : ord.status === 'Confirmed' ? '#bbdefb' : '#c8e6c9';
             let color = ord.status === 'Pending' ? '#e65100' : ord.status === 'Confirmed' ? '#0d47a1' : '#1b5e20';
-            let payText = ord.payMode === 'ONLINE' ? `Online (${ord.payStatus})` : 'COD';
             list.innerHTML += `
-                <div class="order-card">
+                <div class="order-card" style="box-shadow:0 4px 8px rgba(0,0,0,0.05); border:none; border-radius:12px;">
                     <div style="display:flex; justify-content:space-between;">
                         <strong>${ord.orderId}</strong>
-                        <span style="background:${badge}; color:${color}; padding:3px 8px; border-radius:5px; font-size:0.8rem;">${ord.status}</span>
+                        <span style="background:${badge}; color:${color}; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:bold;">${ord.status}</span>
                     </div>
-                    <p style="font-size:0.8rem; color:gray; margin-bottom:5px;">${ord.date}</p>
-                    <p style="font-size:0.9rem;"><strong>Items:</strong> ${ord.items.map(i => `${i.name}(${i.qty})`).join(', ')}</p>
-                    <p style="font-size:0.9rem;"><strong>Payment:</strong> ${payText}</p>
-                    <p style="margin-top:5px; font-weight:bold;">Total: ₹${ord.total}</p>
+                    <p style="font-size:0.8rem; color:gray; margin:8px 0;">${ord.date} | ${ord.payMode}</p>
+                    <p style="font-size:0.9rem;">${ord.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</p>
+                    <p style="margin-top:10px; font-weight:bold; font-size:1.1rem; color:var(--primary-color);">Total: ₹${ord.total}</p>
                 </div>
             `;
         });
     }
 
     // ==========================================
-    // Admin Functions
+    // Admin Control Panel
     // ==========================================
     function showAdminLogin() { showScreen('admin-login-screen'); }
-    function loginAdmin() {
-        if (document.getElementById('admin-pass').value === '752104') {
-            navTo('admin-dashboard'); renderAdminOrders(); renderAdminInventory(); renderSalesReport();
-        } else { alert("Incorrect Password"); }
-    }
+    function loginAdmin() { if (document.getElementById('admin-pass').value === '752104') { navTo('admin-dashboard'); } else { alert("Incorrect Password"); } }
     function logoutAdmin() { navTo('login-screen'); document.getElementById('admin-pass').value = ''; }
+    function toggleAdminTab(tab) { ['orders', 'products', 'categories', 'banners', 'settings'].forEach(t => document.getElementById(`admin-${t}`).classList.add('hidden')); document.getElementById(`admin-${tab}`).classList.remove('hidden'); }
 
-    function toggleAdminTab(tab) {
-        ['orders', 'products', 'reports', 'settings'].forEach(t => document.getElementById(`admin-${t}`).classList.add('hidden'));
-        document.getElementById(`admin-${tab}`).classList.remove('hidden');
-    }
-
-    // Settings Firebase Save
-    function saveSettings() {
-        const name = document.getElementById('set-shop-name').value.trim() || shopSettings.name;
+    async function saveSettings() {
+        const name = document.getElementById('set-shop-name').value.trim() || shopSettings.name; 
         const address = document.getElementById('set-address').value.trim() || shopSettings.address;
-        const logo = document.getElementById('set-logo-file').value.trim() || shopSettings.logo;
-        const qrCode = document.getElementById('set-qr-file').value.trim() || shopSettings.qrCode;
+        const upiId = document.getElementById('set-upi-id').value.trim() || shopSettings.upiId; // NEW UPI INPUT
+        const logoFile = document.getElementById('set-logo-file').files[0]; 
         
-        db.collection("settings").doc("shopDetails").set({ name, address, logo, qrCode })
-          .then(() => alert("Settings Saved!"))
-          .catch(err => alert("Error: " + err));
+        let data = { name, address, upiId };
+        if(logoFile) data.logo = await compressImage(logoFile, 300); 
+        
+        db.collection("settings").doc("shopDetails").set(data, { merge: true }).then(() => {
+            alert("Settings Saved Successfully!");
+            document.getElementById('set-logo-file').value = ''; 
+        }).catch(e => alert("Error saving settings: " + e.message));
     }
 
-    // Orders Firebase Updates
+    async function uploadBanners() {
+        const files = document.getElementById('banner-upload-input').files;
+        if(files.length === 0) return alert("Select at least 1 image"); if(files.length > 5) return alert("Max 5 images allowed");
+        let newBanners = [];
+        for(let i=0; i<files.length; i++) { const b64 = await compressImage(files[i], 800); newBanners.push(b64); }
+        db.collection("settings").doc("shopDetails").set({ banners: newBanners }, { merge: true }).then(() => {
+            alert("Banners Updated Successfully!"); document.getElementById('banner-upload-input').value = '';
+        }).catch(e => alert("Error: " + e.message));
+    }
+    
+    function renderAdminBanners() {
+        const list = document.getElementById('admin-banner-list'); list.innerHTML = '';
+        if(shopSettings.banners) { shopSettings.banners.forEach((b64, i) => { list.innerHTML += `<div style="position:relative; width:100px; height:60px;"><img src="${b64}" style="width:100%; height:100%; object-fit:cover; border-radius:5px;"><span style="position:absolute; top:0; left:0; background:black; color:white; padding:2px 5px; font-size:10px;">${i+1}</span></div>`; }); }
+    }
+
+    function renderAdminCategories() {
+        const list = document.getElementById('admin-category-list'); list.innerHTML = '';
+        categories.forEach(c => {
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;"><img src="${c.image || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"><strong>${c.name}</strong></div>
+                    <div><button class="btn-small btn-secondary" onclick="loadCatEdit('${c.dbId}')">Edit</button> <button class="btn-small btn-danger" onclick="deleteCategory('${c.dbId}')">Del</button></div>
+                </div>
+            `;
+        });
+    }
+    async function saveCategory() {
+        const id = document.getElementById('edit-cat-id').value; const name = document.getElementById('new-cat-name').value.trim(); const file = document.getElementById('new-cat-img').files[0];
+        if(!name) return alert("Enter Category Name");
+        let imageBase64 = null; if(file) imageBase64 = await compressImage(file, 200);
+        let data = { name }; if(imageBase64) data.image = imageBase64;
+        if(id) { db.collection("categories").doc(id).update(data).then(resetCatForm).catch(e => alert(e.message)); } 
+        else { db.collection("categories").add(data).then(resetCatForm).catch(e => alert(e.message)); }
+    }
+    function loadCatEdit(dbId) {
+        const c = categories.find(c => c.dbId === dbId); document.getElementById('edit-cat-id').value = c.dbId; document.getElementById('new-cat-name').value = c.name;
+        document.getElementById('cat-form-title').innerText = "Edit Category"; document.getElementById('save-cat-btn').innerText = "Update Category"; document.getElementById('cancel-cat-btn').classList.remove('hidden');
+    }
+    function resetCatForm() {
+        document.getElementById('edit-cat-id').value = ''; document.getElementById('new-cat-name').value = ''; document.getElementById('new-cat-img').value = '';
+        document.getElementById('cat-form-title').innerText = "Add New Category"; document.getElementById('save-cat-btn').innerText = "Save Category"; document.getElementById('cancel-cat-btn').classList.add('hidden');
+    }
+    function deleteCategory(dbId) { if(confirm("Delete Category?")) db.collection("categories").doc(dbId).delete(); }
+
+    function renderAdminInventory() {
+        const invList = document.getElementById('admin-inventory-list'); invList.innerHTML = '';
+        products.forEach(p => {
+            invList.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                    <div style="display:flex; gap:10px; align-items:center;"><img src="${p.img||'https://via.placeholder.com/50'}" style="width:40px;height:40px;border-radius:8px;"><div><strong>${p.name}</strong><br><small>₹${p.price} | ${p.cat}</small></div></div>
+                    <div><button class="btn-small btn-secondary" onclick="loadEditForm('${p.dbId}')">Edit</button> <button class="btn-small btn-danger" onclick="deleteProduct('${p.dbId}')">Del</button></div>
+                </div>
+            `;
+        });
+    }
+    async function saveProduct() {
+        const id = document.getElementById('edit-prod-id').value; const name = document.getElementById('new-prod-name').value;
+        const price = Number(document.getElementById('new-prod-price').value); const cat = document.getElementById('new-prod-cat').value; const file = document.getElementById('new-prod-img').files[0];
+        if (!name || !price || !cat) return alert("Fill all details");
+        let img = null; if(file) img = await compressImage(file, 400);
+        let data = { name, price, cat }; if(img) data.img = img;
+        if(id) { db.collection("products").doc(id).update(data).then(resetProductForm).catch(e => alert(e.message)); } 
+        else { db.collection("products").add(data).then(resetProductForm).catch(e => alert(e.message)); }
+    }
+    function loadEditForm(dbId) {
+        const p = products.find(p => p.dbId === dbId); document.getElementById('edit-prod-id').value = p.dbId; document.getElementById('new-prod-name').value = p.name;
+        document.getElementById('new-prod-price').value = p.price; document.getElementById('new-prod-cat').value = p.cat;
+        document.getElementById('form-title').innerText = "Edit Product"; document.getElementById('save-prod-btn').innerText = "Update"; document.getElementById('cancel-edit-btn').classList.remove('hidden'); window.scrollTo(0,0);
+    }
+    function resetProductForm() {
+        document.getElementById('edit-prod-id').value = ''; document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-img').value = '';
+        document.getElementById('form-title').innerText = "Add New Product"; document.getElementById('save-prod-btn').innerText = "Save"; document.getElementById('cancel-edit-btn').classList.add('hidden');
+    }
+    function deleteProduct(dbId) { if(confirm("Delete product?")) db.collection("products").doc(dbId).delete(); }
+
     function renderAdminOrders() {
-        const orderList = document.getElementById('admin-order-list');
-        orderList.innerHTML = orders.length ? '' : '<p>No orders yet.</p>';
+        const orderList = document.getElementById('admin-order-list'); orderList.innerHTML = orders.length ? '' : '<p>No orders yet.</p>';
         orders.forEach(ord => {
             let onlineActions = '';
             if(ord.payMode === 'ONLINE') {
                 let badge = ord.payStatus === 'Payment Confirmed' ? 'color:green' : (ord.payStatus === 'Payment Failed' ? 'color:red' : 'color:orange');
                 onlineActions = `
-                    <div style="background:#fff3e0; padding:10px; margin:10px 0; border-radius:5px;">
-                        <p><strong>Mode:</strong> Online | <strong>UTR:</strong> ${ord.utr}</p>
-                        <p><strong>Pay Status:</strong> <span style="${badge}; font-weight:bold;">${ord.payStatus}</span></p>
-                        ${ord.payStatus === 'Pending Verification' ? `<button class="btn btn-small" onclick="verifyPayment('${ord.dbId}', true)">Confirm Payment</button> <button class="btn btn-small btn-danger" onclick="verifyPayment('${ord.dbId}', false)">Reject Payment</button>` : ''}
+                    <div style="background:#f4f9ff; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #cce5ff;">
+                        <p><strong>Mode:</strong> Online | <strong>UTR:</strong> ${ord.utr}</p><p><strong>Status:</strong> <span style="${badge}; font-weight:bold;">${ord.payStatus}</span></p>
+                        ${ord.payStatus === 'Pending Verification' ? `<button class="btn btn-small" onclick="verifyPayment('${ord.dbId}', true)">Confirm</button> <button class="btn btn-small btn-danger" onclick="verifyPayment('${ord.dbId}', false)">Reject</button>` : ''}
                     </div>
                 `;
-            } else {
-                onlineActions = `<p style="margin:5px 0;"><strong>Mode:</strong> COD</p>`;
             }
-
             orderList.innerHTML += `
-                <div class="order-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <h4>${ord.orderId}</h4>
-                        <select onchange="changeOrderStatus('${ord.dbId}', this.value)" style="padding:5px; border-radius:5px;">
-                            <option value="Pending" ${ord.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                            <option value="Confirmed" ${ord.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                            <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <div class="order-card" style="box-shadow:0 4px 10px rgba(0,0,0,0.05); border:none;">
+                    <div style="display:flex; justify-content:space-between;"><h4 style="color:var(--primary-color);">${ord.orderId}</h4>
+                        <select onchange="changeOrderStatus('${ord.dbId}', this.value)" style="padding:5px; border-radius:5px; border:1px solid #ccc;">
+                            <option value="Pending" ${ord.status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Confirmed" ${ord.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option><option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                         </select>
                     </div>
-                    <p><strong>Customer:</strong> ${ord.customer.name} (${ord.customer.phone})</p>
-                    <p><strong>Address:</strong> ${ord.address}</p>
-                    ${onlineActions}
-                    <p><strong>Total:</strong> ₹${ord.total}</p>
-                    <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-                        <button class="btn btn-small" style="background:#25D366;" onclick="window.open('https://wa.me/91${ord.customer.phone}?text=${encodeURIComponent(`Hello from ${shopSettings.name}! Your order ${ord.orderId} status is now: ${ord.status}.`)}', '_blank')">WhatsApp</button>
-                        <button class="btn btn-small btn-secondary" onclick="generateThermalBill('${ord.orderId}', 'download')">Download Bill</button>
-                        <button class="btn btn-small btn-secondary" onclick="generateThermalBill('${ord.orderId}', 'share')">Share Bill</button>
+                    <p style="margin-top:10px;"><strong>👤 Customer:</strong> ${ord.customer.name} (${ord.customer.phone})</p><p><strong>📍 Address:</strong> ${ord.address}</p>${onlineActions}
+                    <p style="margin-top:5px; font-weight:bold; font-size:1.1rem;">Total: ₹${ord.total}</p>
+                    <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+                        <button class="btn btn-small" style="background:#25D366; border-radius:20px;" onclick="window.open('https://wa.me/91${ord.customer.phone}?text=${encodeURIComponent(`Hello! Your order ${ord.orderId} status is: ${ord.status}.`)}', '_blank')">💬 WhatsApp</button>
+                        <button class="btn btn-small btn-secondary" style="border-radius:20px;" onclick="generateThermalBill('${ord.orderId}', 'download')">Download Bill</button>
+                        <button class="btn btn-small btn-secondary" style="border-radius:20px;" onclick="generateThermalBill('${ord.orderId}', 'share')">Share Bill</button>
                     </div>
                 </div>
             `;
         });
     }
+    function verifyPayment(dbId, isValid) { db.collection("orders").doc(dbId).update({ payStatus: isValid ? 'Payment Confirmed' : 'Payment Failed', status: isValid ? 'Confirmed' : 'Pending' }); }
+    function changeOrderStatus(dbId, newStatus) { db.collection("orders").doc(dbId).update({ status: newStatus }); }
 
-    function verifyPayment(dbId, isValid) {
-        db.collection("orders").doc(dbId).update({
-            payStatus: isValid ? 'Payment Confirmed' : 'Payment Failed',
-            status: isValid ? 'Confirmed' : 'Pending'
-        });
+    function renderSalesReport() {
+        let total = 0; orders.forEach(o => { if(o.status !== 'Cancelled' && o.payStatus !== 'Payment Failed') total += o.total; });
+        document.getElementById('total-revenue-amt').innerText = total;
     }
-
-    function changeOrderStatus(dbId, newStatus) {
-        db.collection("orders").doc(dbId).update({ status: newStatus });
-    }
-
-    // Print Logic
+    
     async function generateThermalBill(orderId, action) {
         const ord = orders.find(o => o.orderId === orderId);
-        if(!ord) return;
-        document.getElementById('tr-shop-name').innerText = shopSettings.name;
-        document.getElementById('tr-address').innerText = shopSettings.address;
-        document.getElementById('tr-order-id').innerText = ord.orderId;
-        document.getElementById('tr-date').innerText = ord.date;
-        document.getElementById('tr-customer').innerText = `${ord.customer.name} (${ord.customer.phone})`;
-        document.getElementById('tr-paymode').innerText = ord.payMode === 'ONLINE' ? `Online (${ord.utr})` : 'COD';
+        document.getElementById('tr-shop-name').innerText = shopSettings.name; document.getElementById('tr-address').innerText = shopSettings.address; document.getElementById('tr-order-id').innerText = ord.orderId; document.getElementById('tr-customer').innerText = `${ord.customer.name}`; document.getElementById('tr-paymode').innerText = ord.payMode === 'ONLINE' ? `Online` : 'COD';
+        document.getElementById('tr-items').innerHTML = ''; ord.items.forEach(i => { document.getElementById('tr-items').innerHTML += `<tr><td>${i.name.substring(0,10)}</td><td>${i.qty}</td><td style="text-align:right;">₹${i.price * i.qty}</td></tr>`; }); document.getElementById('tr-total').innerText = ord.total;
         
-        const tbody = document.getElementById('tr-items');
-        tbody.innerHTML = '';
-        ord.items.forEach(i => { tbody.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align:right;">₹${i.price * i.qty}</td></tr>`; });
-        document.getElementById('tr-total').innerText = ord.total;
-
-        const element = document.getElementById('thermal-receipt');
-        element.parentElement.style.display = 'block';
-
+        const el = document.getElementById('thermal-receipt'); el.parentElement.style.display = 'block';
         const opt = { margin: 0, filename: `Bill_${ord.orderId}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: [3.15, 6], orientation: 'portrait' } };
-
-        if(action === 'download') {
-            await html2pdf().set(opt).from(element).save();
-            element.parentElement.style.display = 'none';
+        
+        if (action === 'download') {
+            await html2pdf().set(opt).from(el).save();
+            el.parentElement.style.display = 'none';
         } else if (action === 'share') {
             try {
-                const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+                const pdfBlob = await html2pdf().set(opt).from(el).output('blob');
                 const file = new File([pdfBlob], `Bill_${ord.orderId}.pdf`, { type: "application/pdf" });
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ title: 'Your Order Bill', text: `Here is your bill from ${shopSettings.name}`, files: [file] });
-                } else { alert("Share not supported. Download instead."); }
+                    await navigator.share({ title: `Order Bill ${ord.orderId}`, text: "Please find your bill attached.", files: [file] });
+                } else { alert("Sharing files is not supported on this browser. Try downloading instead."); }
             } catch (err) { console.error(err); }
-            element.parentElement.style.display = 'none';
-        }
-    }
-
-    // Sales Report
-    function renderSalesReport() {
-        let totalRevenue = 0;
-        let itemSales = {};
-        orders.forEach(ord => {
-            if(ord.status !== 'Cancelled' && ord.payStatus !== 'Payment Failed') {
-                totalRevenue += ord.total;
-                ord.items.forEach(i => { itemSales[i.name] = (itemSales[i.name] || 0) + i.qty; });
-            }
-        });
-        document.getElementById('total-revenue-amt').innerText = totalRevenue;
-        const tbody = document.getElementById('item-sales-tbody');
-        tbody.innerHTML = '';
-        Object.keys(itemSales).forEach(itemName => { tbody.innerHTML += `<tr><td>${itemName}</td><td>${itemSales[itemName]}</td></tr>`; });
-    }
-
-    // Inventory Firebase CRUD
-    function renderAdminInventory() {
-        const invList = document.getElementById('admin-inventory-list');
-        invList.innerHTML = '';
-        products.forEach(p => {
-            invList.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:10px 0;">
-                    <div><strong>${p.name}</strong><br><small>₹${p.price} | ${p.cat}</small></div>
-                    <div>
-                        <button class="btn-small btn-secondary" onclick="loadEditForm('${p.dbId}')">Edit</button>
-                        <button class="btn-small btn-danger" onclick="deleteProduct('${p.dbId}')">Delete</button>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    function saveProduct() {
-        const id = document.getElementById('edit-prod-id').value;
-        const name = document.getElementById('new-prod-name').value;
-        const price = Number(document.getElementById('new-prod-price').value);
-        const cat = document.getElementById('new-prod-cat').value;
-        let img = document.getElementById('new-prod-img').value;
-        if (!name || !price) return alert("Please fill name and price");
-        if (!img) img = `https://via.placeholder.com/150/e0e0e0/808080?text=${name.substring(0,5)}`;
-
-        const prodData = { name, price, cat, img };
-
-        if(id) {
-            db.collection("products").doc(id).update(prodData).then(() => resetProductForm());
-        } else {
-            db.collection("products").add(prodData).then(() => resetProductForm());
-        }
-    }
-
-    function loadEditForm(dbId) {
-        const p = products.find(p => p.dbId === dbId);
-        document.getElementById('edit-prod-id').value = p.dbId;
-        document.getElementById('new-prod-name').value = p.name;
-        document.getElementById('new-prod-price').value = p.price;
-        document.getElementById('new-prod-cat').value = p.cat;
-        document.getElementById('new-prod-img').value = p.img.includes('placeholder') ? '' : p.img;
-        document.getElementById('form-title').innerText = "Edit Product";
-        document.getElementById('save-prod-btn').innerText = "Update Product";
-        document.getElementById('cancel-edit-btn').classList.remove('hidden');
-        window.scrollTo(0, 0);
-    }
-    function resetProductForm() {
-        document.getElementById('edit-prod-id').value = ''; document.getElementById('new-prod-name').value = '';
-        document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-img').value = '';
-        document.getElementById('form-title').innerText = "Add New Product";
-        document.getElementById('save-prod-btn').innerText = "Add Product";
-        document.getElementById('cancel-edit-btn').classList.add('hidden');
-    }
-    function deleteProduct(dbId) {
-        if(confirm("Delete this product?")) {
-            db.collection("products").doc(dbId).delete();
+            el.parentElement.style.display = 'none';
         }
     }
 </script>
